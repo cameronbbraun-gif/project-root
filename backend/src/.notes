@@ -1,0 +1,46 @@
+Frontend (contact.html / JS)
+	•	API endpoint: change form action (and any JS fetch URLs) from http://localhost:5000/api/contact → your live API, e.g. https://api.detailgeeks.com/api/contact.
+	•	Auto-switch config: add a small env-based switch in frontend/src/js/contact.js so dev uses localhost and prod uses live URL.
+	•	CORS match: make sure the frontend domain you’ll use in production matches what the backend allows (see Backend section).
+	•	Disable test mode: if your JS shows success when no action is set, ensure action is set in prod.
+	•	Asset paths: verify all <script src=...> and <link href=...> paths still resolve on your host (relative vs absolute).
+	•	Remove leftover localhost links anywhere else (icons, images, social previews—rare, but check).
+
+Backend (Express API)
+	•	Base URL: deploy your API (Heroku/Render/Railway/Fly.io/VPS) and note the live base URL.
+	•	CORS: update cors({ origin: [...] }) to include your live frontend domain (e.g., https://detailgeeks.com), and remove http://127.0.0.1:5500 if you want to lock prod down.
+	•	Environment variables: move secrets to .env (PORT, SMTP creds, SendGrid key, webhook URLs, DB URL, etc.).
+	•	Email sending (if you add it): use a production SMTP/SendGrid key; set up SPF/DKIM for your domain so emails land in inbox.
+	•	Logging: enable structured logs in prod (winston/pino) and disable noisy console.
+	•	Security middleware: add helmet(), request size limits, and rate limiting on /api/contact.
+	•	Validation: keep server-side validation (first/last name, email format, message length) in case frontend JS is bypassed.
+
+Domain & HTTPS
+	•	DNS: point api.detailgeeks.com (or similar) to your backend host.
+	•	TLS/HTTPS: ensure an SSL cert (Let’s Encrypt/host-provided) so your form posts over HTTPS.
+	•	CORS over HTTPS: confirm origins use https:// in both CORS config and frontend.
+
+Build/Deploy Setup
+	•	Start scripts: npm run start (or a Procfile for Heroku) set correctly.
+	•	Health check: optional GET /health route for uptime monitors.
+	•	Env flags: set NODE_ENV=production on the server.
+
+Bot/Spam Protection (optional but recommended)
+	•	reCAPTCHA v3/hCaptcha: add site key to frontend, secret to backend; verify token server-side.
+	•	Honeypot field: simple hidden field check to cut basic bots.
+	•	Rate limiting: e.g., max 5 requests / 5 minutes per IP.
+
+Content & UX
+	•	Success/fail UI: verify .w-form-done and .w-form-fail show/hide correctly with real backend responses.
+	•	Thank-you copy: customize the success message and consider redirecting to a “Thank You” page.
+	•	Accessibility: confirm labels/ids, type="email", required fields work in prod.
+
+Monitoring & Privacy
+	•	Error tracking: add Sentry/Logtail/etc. to catch frontend/backend errors.
+	•	Analytics: if you use GA/PL, set the production measurement ID.
+	•	Privacy/Terms: ensure your live links are correct and accessible.
+
+Things easy to forget
+	•	Any other forms (e.g., the footer newsletter form) either pointed at a working service or removed.
+	•	Remove test console logs and dev-only code paths.
+	•	Verify time zones and email “from” domain are correct in prod.
