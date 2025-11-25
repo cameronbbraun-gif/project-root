@@ -1,8 +1,7 @@
-// src/lib/mongodb.js
 import { MongoClient, MongoServerSelectionError } from 'mongodb';
 import mongoose from 'mongoose';
 
-const uri = process.env.MONGODB_URI; // For Atlas this should start with mongodb+srv://
+const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || 'detailgeeks_db';
 
 if (!uri) {
@@ -11,20 +10,15 @@ if (!uri) {
 
 const isSrv = uri.startsWith('mongodb+srv://');
 
-// Let the driver negotiate TLS for SRV (Atlas). Do NOT override with tls/direct flags here.
 const client = new MongoClient(uri, {
-  // A short, reasonable connect timeout
   connectTimeoutMS: Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 20000),
-  // For Atlas, it's fine (and recommended) to set the Stable API
   serverApi: { version: '1', strict: false, deprecationErrors: true },
 });
 
-// Hot-reload safety in dev
 let clientPromise;
 if (process.env.NODE_ENV === 'development') {
   if (!globalThis._atlasClientPromise) {
     globalThis._atlasClientPromise = client.connect().catch((err) => {
-      // Make the error very explicit when it happens during startup
       const msg = `[mongo] connect failed: ${err?.message || err}`;
       console.error(msg);
       throw err;
@@ -40,7 +34,6 @@ export async function getDb() {
     const conn = await clientPromise;
     return conn.db(dbName);
   } catch (err) {
-    // Augment common misconfigurations with friendlier hints
     const e = err;
     const raw = e?.message || String(e);
     if (e instanceof MongoServerSelectionError || /SSL|TLS|handshake|certificate/i.test(raw)) {

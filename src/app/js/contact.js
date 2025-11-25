@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const endpoint = form.getAttribute("action") || "http://localhost:3000/api/contact";
+    const endpoint = form.getAttribute("action") || "https://detailgeeksautospa.com/api/contact";
 
     if (!endpoint) {
       

@@ -3,9 +3,18 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { putFileToS3 } from '@/lib/s3';
 
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+  "http://localhost:5500",
+  "https://detailgeeksautospa.com",
+];
+
 function corsHeaders(req) {
   const origin = req.headers?.get?.('origin') || '';
-  const allowOrigin = origin || '*';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : "https://detailgeeksautospa.com";
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',

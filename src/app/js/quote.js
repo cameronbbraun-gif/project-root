@@ -21,16 +21,14 @@ if (uploadBtn && photosInput) {
 }
 if (batchHidden) batchHidden.value = uploadBatch;
 
-// Point API to Next.js dev server when running the page via Live Server (127.0.0.1:5500)
 const isLiveServer = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') && location.port === '5500';
-const API_BASE = isLiveServer ? 'http://localhost:3000' : '';
-const IMG_BASE = isLiveServer ? 'http://localhost:3000' : '';
+const API_BASE = isLiveServer ? 'http://localhost:3000' : 'https://detailgeeksautospa.com';
+const IMG_BASE = isLiveServer ? 'http://localhost:3000' : 'https://detailgeeksautospa.com';
 
-const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_SIZE = 25 * 1024 * 1024; 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
 let selectedFiles = [];
 
-// Safe UUID for browsers without crypto.randomUUID
 function safeUUID() {
   try { if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID(); } catch {}
   return ('xxxxxxxxyxxxx'.replace(/[xy]/g, c => {
@@ -57,18 +55,16 @@ function formatBytes(b) {
     return `${val.toFixed(val < 10 ? 2 : 0)} ${units[i]}`;
 }
 
-// ---- Progress helpers (simulate + animate) ----
 function startSimulatedProgress(item, renderCb) {
   stopSimulatedProgress(item);
   item._tickStart = Date.now();
   item._tick = setInterval(() => {
     if (item._status !== 'uploading') return stopSimulatedProgress(item);
     const cap = 95;
-    const step = 1; // 1% per tick
+    const step = 1; 
     const next = Math.min(cap, (item._pct || 0) + step);
     if (next !== item._pct) {
       item._pct = next;
-      // Direct DOM update for this item
       const row = document.querySelector(`.upload-item[data-id="${item.id}"]`);
       const bar = row ? row.querySelector('.progress-bar') : null;
       const pctEl = row ? row.querySelector('.file-percent') : null;
@@ -106,7 +102,6 @@ async function uploadOneFile(item, idx) {
     fd.append('file', item.file);
     item._status = 'uploading';
     item._pct = 0;
-    // Direct DOM nudge: show initial 1% so users see movement right away
     item._pct = 1;
     const renderNow = () => render();
     const renderRow = () => {
@@ -130,13 +125,10 @@ async function uploadOneFile(item, idx) {
       stopSimulatedProgress(item);
       const loaded = evt.loaded, total = Math.max(1, evt.total);
       const pct = Math.round((loaded / total) * 100);
-      // Never show 100 here; reserve that for onload
-      const target = Math.min(98, pct); // keep headroom
+      const target = Math.min(98, pct);
       const current = item._pct || 0;
-      // Limit large jumps for visible movement
       const clampedTarget = Math.min(target, current + 10);
       if (clampedTarget > current) {
-        // Animate to clampedTarget over ~250ms
         const start = current;
         const end = clampedTarget;
         const t0 = performance.now();
@@ -163,7 +155,6 @@ async function uploadOneFile(item, idx) {
         item._done = true;
         item._status = 'done';
         item._pct = 100;
-        // Finalize DOM to 100% and add checkmark
         const row = document.querySelector(`.upload-item[data-id="${item.id}"]`);
         const bar = row ? row.querySelector('.progress-bar') : null;
         const pctEl = row ? row.querySelector('.file-percent') : null;

@@ -1,3 +1,26 @@
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+  "http://localhost:5500",
+  "https://detailgeeksautospa.com",
+];
+
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
+
+export async function OPTIONS(req) {
+  const origin = req.headers.get("origin") || "";
+  const allow = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : "https://detailgeeksautospa.com";
+
+  return new NextResponse(null, { status: 204, headers: corsHeaders(allow) });
+}
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 
@@ -48,6 +71,10 @@ function ticketIdFromBatch(batch) {
 
 export async function POST(req) {
   try {
+    const origin = req.headers.get("origin") || "";
+    const allow = ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : "https://detailgeeksautospa.com";
     const form = await req.formData();
 
     // --- Basic server-side validation mirroring form "required" fields ---
@@ -68,7 +95,10 @@ export async function POST(req) {
       if (!val || (typeof val === 'string' && !val.trim())) missing.push(name);
     }
     if (missing.length) {
-      return NextResponse.json({ ok: false, error: 'Missing required fields', missing }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: 'Missing required fields', missing },
+        { status: 400, headers: corsHeaders(allow) }
+      );
     }
 
     // Fields
@@ -184,9 +214,19 @@ export async function POST(req) {
       ownerEmail: typeof ownerSend !== 'undefined' ? ownerSend : null,
       customerEmail: (email && EMAIL_FROM) ? (typeof customerSend !== 'undefined' ? customerSend : null) : null,
     };
-    return NextResponse.json({ ok: true, id: String(insertedId), ...diag }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, id: String(insertedId), ...diag },
+      { status: 200, headers: corsHeaders(allow) }
+    );
   } catch (err) {
     console.error("[quote] POST error:", err);
-    return NextResponse.json({ ok: false, error: String(err?.message || err) }, { status: 500 });
+    const origin = req.headers.get("origin") || "";
+    const allow = ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : "https://detailgeeksautospa.com";
+    return NextResponse.json(
+      { ok: false, error: String(err?.message || err) },
+      { status: 500, headers: corsHeaders(allow) }
+    );
   }
 }

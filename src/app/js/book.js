@@ -1369,7 +1369,6 @@
     });
   
   })();
-// Ensure Stripe.js is loaded and setupStripe runs on DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("card-element")) {
     setupStripe();
@@ -1404,7 +1403,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const deposit = Number(depositText.replace(/[^0-9]/g, "")); // 20
       const amountInCents = deposit * 100;
 
-      const res = await fetch("/api/create-payment-intent", {
+      const res = await fetch("https://detailgeeksautospa.com/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1439,7 +1438,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("Payment successful:", paymentIntent.id);
 
-      fetch("/api/save-payment", {
+      fetch("https://detailgeeksautospa.com/api/payment-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

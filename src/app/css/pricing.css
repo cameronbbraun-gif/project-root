@@ -11,14 +11,12 @@
     z-index: 1;            
   }
   
-  /* Hover fill on the inner square */
   .vehicle-option:hover .button-style-18,
   .vehicle-option:hover .button-style-19 { 
     background-color: #253346; 
     color: #ffffff;
   }
   
-  /* Blue ring drawn ON the inner square, behind its contents */
   .vehicle-option .button-style-18::after,
   .vehicle-option .button-style-19::after {
     content: "";

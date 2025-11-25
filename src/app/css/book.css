@@ -1,18 +1,13 @@
-/* ===== Multi-step Booking (book.css) ===== */
-
-/* Step containers */
 .form-step { display: none; width: 100%; }
 .form-step.is-active { display: flex; flex-direction: column; }
 
-/* Progress bar colors */
 :root{
-  --progress-bg: #d1d5db;    /* inactive step background */
-  --progress-text: #9ca3af;  /* inactive label text (labels gray, NOT black) */
-  --progress-active: #499ad4;/* active/current step */
-  --progress-complete: #499ad4; /* completed steps */
+  --progress-bg: #d1d5db;    
+  --progress-text: #9ca3af; 
+  --progress-active: #499ad4;
+  --progress-complete: #499ad4; 
 }
 
-/* Numbered circles */
 .progress-step {
   background: var(--progress-bg);
   border-radius: 9999px;
@@ -21,39 +16,33 @@
 }
 .progress-step p { color: #000; transition: color .25s ease; }
 
-/* Progress connectors (rectangles between circles) */
 .progress-connector { background: var(--progress-bg); transition: background-color .25s ease; }
 .progress-connector.is-active,
 .progress-connector.is-complete { background: var(--progress-active); }
 
-/* Labels under circles */
 .progress-label { color: var(--progress-text); transition: color .25s ease; }
 
-/* Active step */
 .progress-step.is-active { background: var(--progress-active); }
 .progress-step.is-active p { color: #fff; }
 .progress-label.is-active { color: #fff; }
 
-/* Completed step (same look as active unless you want a different shade) */
 .progress-step.is-complete { background: var(--progress-complete); }
 .progress-step.is-complete p { color: #fff; }
 .progress-label.is-complete { color: #fff; }
 
-/* Buttons feel a bit more interactive */
 .nextbutton, .back-button { user-select: none; }
 .nextbutton, .back-button {
   text-decoration: none !important;
 }
 .nextbutton:active, .back-button:active { transform: translateY(1px); }
 
-/* Hover colors for navigation buttons */
 .nextbutton:hover {
-  background-color: #374151; /* darker gray hover for next */
+  background-color: #374151; 
   transition: background-color 0.25s ease;
 }
 .back-button:hover {
-  background-color: transparent; /* keep background clear */
-  border: 2px solid #9ca3ad; /* gray outline on hover */
+  background-color: transparent; 
+  border: 2px solid #9ca3ad; 
   transition: border-color 0.25s ease;
 }
 .back-button, .back-button:hover {
@@ -63,7 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px; /* space between arrow and text */
+  gap: 6px; 
   padding: 12px 30px;
   border: 2px solid transparent;
   border-radius: 15px;
