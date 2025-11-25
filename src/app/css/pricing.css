@@ -1,4 +1,3 @@
-/* ===== Pricing page vehicle selector (radio-style) ===== */
 .vehicle-option { 
     position: relative;
     cursor: pointer; 
@@ -6,11 +5,10 @@
     padding: 8px 10px;       /* spacing around inner square */
   }
   
-  /* The inner dark squares */
   .vehicle-option .button-style-18,
   .vehicle-option .button-style-19 {
-    position: relative;      /* create stacking context for the ring */
-    z-index: 1;              /* inner square above page background */
+    position: relative;      
+    z-index: 1;            
   }
   
   /* Hover fill on the inner square */

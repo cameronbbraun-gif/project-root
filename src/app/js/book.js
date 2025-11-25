@@ -5,12 +5,27 @@
   let cardElement = null;
 
   function setupStripe() {
-    if (!stripePublicKey) return;
+    if (!stripePublicKey || !window.Stripe) return;
+    if (stripe) return;
 
     stripe = Stripe(stripePublicKey);
     elements = stripe.elements();
 
-    // Card input element
+    // The following block ensures compatibility with the new Express Checkout Element
+    // and enables Link, Google Pay, and Apple Pay options to appear in production (HTTPS) environments.
+    const expressMount = document.getElementById("express-checkout-element");
+    if (expressMount) {
+      const expressCheckout = elements.create("expressCheckout", {
+        paymentMethodTypes: ["card", "link", "google_pay", "apple_pay"],
+        buttonStyle: {
+          theme: "light",
+          height: 44,
+          shape: "rect"
+        }
+      });
+      expressCheckout.mount("#express-checkout-element");
+    }
+
     cardElement = elements.create("card", {
       hidePostalCode: false,
       style: {
@@ -26,37 +41,6 @@
     if (cardMount) {
       cardElement.mount("#card-element");
     }
-
-    // Stripe Payment Request Button Element (Apple Pay / Google Pay / Link)
-    const paymentRequest = stripe.paymentRequest({
-      country: "US",
-      currency: "usd",
-      total: { label: "Deposit", amount: 0 },
-      requestPayerName: true,
-      requestPayerEmail: true
-    });
-
-    const prButton = elements.create("paymentRequestButton", {
-      paymentRequest,
-      style: {
-        paymentRequestButton: {
-          type: "default",
-          theme: "dark",
-          height: "48px"
-        }
-      }
-    });
-
-    paymentRequest.canMakePayment().then(function (result) {
-      const container = document.getElementById("payment-request-button");
-
-      if (result) {
-        container.style.display = "block";
-        prButton.mount("#payment-request-button");
-      } else {
-        container.style.display = "none";
-      }
-    });
   }
 
   window.setupStripe = setupStripe;
@@ -1385,64 +1369,13 @@
     });
   
   })();
-  document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("card-element")) {
-      setupStripe();
-    }
-  });
+// Ensure Stripe.js is loaded and setupStripe runs on DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("card-element")) {
+    setupStripe();
+  }
+});
 
-  document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("paypal-button-container")) {
-
-      function getDepositCents() {
-        const depositText = document.getElementById("deposit-amount")?.textContent || "$0";
-        const deposit = Number(depositText.replace(/[^0-9]/g, ""));
-        return deposit * 100;
-      }
-
-      paypal.Buttons({
-        style: {
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "paypal"
-        },
-
-        createOrder: function (data, actions) {
-          const depositInDollars = getDepositCents() / 100;
-
-          return actions.order.create({
-            purchase_units: [{
-              amount: { value: depositInDollars.toFixed(2) },
-              description: "Detail Geeks Booking Deposit"
-            }]
-          });
-        },
-
-        onApprove: function (data, actions) {
-          return actions.order.capture().then(function (details) {
-
-            fetch("/api/save-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentId: details.id,
-                amount: getDepositCents(),
-                provider: "paypal"
-              })
-            });
-
-            window.location.href = "/booking-success.html";
-          });
-        },
-
-        onError: function (err) {
-          console.error("PayPal Error:", err);
-          window.location.href = "/booking-error.html";
-        }
-      }).render('#paypal-button-container');
-    }
-  });
   document.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-next]");
     if (!btn) return;

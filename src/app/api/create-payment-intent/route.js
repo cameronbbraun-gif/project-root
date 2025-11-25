@@ -26,6 +26,7 @@ export async function POST(req) {
       amount,             
       currency: "usd",
       description: description || "Detail Geeks deposit",
+      payment_method_types: ["card", "link"],
       automatic_payment_methods: {
         enabled: true       
       },

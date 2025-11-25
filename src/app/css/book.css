@@ -69,12 +69,7 @@
   border-radius: 15px;
   transition: border-color 0.25s ease;
 }
-/* .back-button:hover .back-text, .back-button:hover .back-arrow {
-  color: #9ca3ad;  lighter gray text 
-  filter: brightness(1.2);
-} */
 
-/* --- Dynamic height fixes to prevent clipping --- */
 .hero-stack-4,
 .hero-stack-4 .form-block,
 .hero-stack-4 .form-2,
@@ -86,15 +81,13 @@
 }
 .hero-stack-4, .form-block { overflow: visible !important; }
 
-/* Small white divider above footer */
 .booking-divider {
   width: 100%;
-  height: 0;             /* hairline divider */
+  height: 0;             
   border-top: 1px solid rgba(255,255,255,0.35);
   margin: 24px 0 0;
 }
 
-/* Hover effect for detail package boxes and add-ons */
 .package-box, .detail-box, .service-box,
 [class*="addon"], [class*="add-on"], [class*="add_on"] {
   border: 2px solid transparent;
@@ -106,11 +99,11 @@
 [class*="addon"]:hover, [class*="add-on"]:hover, [class*="add_on"]:hover {
   transform: translateY(-6px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  border-color: #3b82f6 !important; /* brighter blue border */
-  background-color: rgba(59, 130, 246, 0.05); /* soft blue glow */
+  border-color: #3b82f6 !important; 
+  background-color: rgba(59, 130, 246, 0.05);
   transition: all 0.25s ease;
 }
-/* keyboard accessibility */
+
 .package-box:focus-visible, .detail-box:focus-visible, .service-box:focus-visible,
 [class*="addon"]:focus-visible, [class*="add-on"]:focus-visible, [class*="add_on"]:focus-visible {
   outline: none;
@@ -131,7 +124,7 @@
 }
 
 .grid .time-slot:hover {
-  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.35) inset; /* subtle hover ring */
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.35) inset; 
 }
 
 .grid .time-slot.is-selected {
@@ -261,4 +254,105 @@
   border-radius: 14px;
   height: 48px;
   padding: 0 22px;
+}
+.quick-checkout-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.quick-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  height: 48px;
+}
+
+.quick-btn img {
+  height: 20px;
+}
+
+.quick-btn.apple {
+  background: #000;
+}
+
+.quick-btn.google {
+  background: #fff;
+  border: 1px solid #dadada;
+}
+
+.quick-btn.paypal {
+  background: #ffc439;
+}
+
+.express-checkout-wrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: 30px auto 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.divider-line {
+  width: 100%;
+  height: 1px;
+  background: #dadada;
+  margin: 10px 0 10px 0;
+}
+
+.express-checkout-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4b5563;
+  text-align: center;
+  margin: 0;
+}
+
+.quick-checkout-buttons {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.quick-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 22px;
+  height: 48px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s ease;
+}
+
+.quick-btn img {
+  height: 22px;
+}
+
+.quick-btn.apple {
+  background: #000;
+}
+
+.quick-btn.google {
+  background: #fff;
+  border: 1px solid #d1d5db;
+}
+
+.quick-btn.link {
+  background: #ffffff;
+  border: 1px solid #cfcfcf;
+}
+
+.quick-btn:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
