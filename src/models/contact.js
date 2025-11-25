@@ -1,4 +1,4 @@
-import { Schema } from require('mongoose');
+import mongoose, { Schema } from "mongoose";
 
 const contactSchema = new Schema({
     first_name: {
