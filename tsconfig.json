@@ -23,6 +23,6 @@
       "@/*": ["*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/**/*"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/**/*", "public/pricing.js", "public/quote.js", "public/webflow.js", "public/book.js", "public/contact.js", "public/pricing.js", "public/quote.js", "public/webflow.js", "public/book.js", "public/contact.js", "public/js", "public/js/jquery.min.js"],
   "exclude": ["node_modules"]
 }
