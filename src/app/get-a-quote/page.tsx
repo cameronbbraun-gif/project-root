@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import "./quote.css";
 
@@ -35,7 +36,7 @@ export default function GetAQuotePage() {
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                   <li>
-                    <a href="/" className="nav-link-4">Home</a>
+                    <Link href="/" className="nav-link-4">Home</Link>
                   </li>
                   <li className="list-item">
                     <a href="/about-us" className="nav-link-4">About Us</a>

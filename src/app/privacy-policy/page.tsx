@@ -87,11 +87,11 @@ export default function PrivacyPolicyPage() {
 
 
                   <p className="paragraph">
-                    This Privacy Policy describes how Detail Geeks (the "Site","we","us", or "our")
+                    This Privacy Policy describes how Detail Geeks (the &quot;Site&quot;,&quot;we&quot;,&quot;us&quot;, or &quot;our&quot;)
                     collects, uses, and discloses your personal information when you visit, use
-                    our services, or make a purchase from detailgeeksautospa.com (the "Site") or
-                    otherwise communicate with us (collectively, the "Services"). For purposes of
-                    this Privacy Policy, "you" and "your" means you as the user of the Services,
+                    our services, or make a purchase from detailgeeksautospa.com (the &quot;Site&quot;) or
+                    otherwise communicate with us (collectively, the &quot;Services&quot;). For purposes of
+                    this Privacy Policy, &quot;you&quot; and &quot;your&quot; means you as the user of the Services,
                     whether you are a customer, website visitor, or another individual whose
                     information we have collected pursuant to this Privacy Policy.
                   </p>
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
                       We may update this Privacy Policy from time to time, including to reflect
                       changes to our practices or for other operational, legal, or regulatory
                       reasons. We will post the revised Privacy Policy on the Site, update the
-                      "Last updated" date and take any other steps required by applicable law.
+                      &quot;Last updated&quot; date and take any other steps required by applicable law.
                     </p>
                   </div>
 

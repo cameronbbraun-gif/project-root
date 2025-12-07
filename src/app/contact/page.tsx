@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { initContactForm } from "./contact";
 
 export default function ContactPage() {
@@ -24,14 +25,14 @@ export default function ContactPage() {
         >
           <div className="container-23">
             <div className="navbar-wrapper-4">
-              <a href="/" className="navbar-brand-5 w-nav-brand">
+              <Link href="/" className="navbar-brand-5 w-nav-brand">
                 <img src="/images/logo.png" loading="lazy" width="92" alt="" className="image-13" />
                 <h1 className="heading-3">Detail Geeks</h1>
-              </a>
+              </Link>
 
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
-                  <li><a href="/" className="nav-link-4">Home</a></li>
+                  <li><Link href="/" className="nav-link-4">Home</Link></li>
                   <li><a href="/about-us" className="nav-link-4">About Us</a></li>
                   <li><a href="/pricing" className="nav-link-4">Pricing</a></li>
                   <li><a href="/contact" className="nav-link-4 w--current">Contact</a></li>
