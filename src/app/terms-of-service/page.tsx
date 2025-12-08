@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import WebflowScripts from "../WebflowScripts";
 
 export default function TermsOfServicePage() {
@@ -19,7 +20,7 @@ export default function TermsOfServicePage() {
         >
           <div className="container-23">
             <div className="navbar-wrapper-4">
-              <a href="/" className="navbar-brand-5 w-nav-brand">
+              <Link href="/" className="navbar-brand-5 w-nav-brand">
                 <img
                   src="/images/logo.png"
                   loading="lazy"
@@ -28,13 +29,13 @@ export default function TermsOfServicePage() {
                   className="image-13"
                 />
                 <h1 className="heading-3">Detail Geeks</h1>
-              </a>
+              </Link>
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                   <li>
-                    <a href="/" className="nav-link-4">
+                    <Link href="/" className="nav-link-4">
                       Home
-                    </a>
+                    </Link>
                   </li>
                   <li className="list-item">
                     <a href="/about-us" className="nav-link-4">

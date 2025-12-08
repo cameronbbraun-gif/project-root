@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function PrivacyPolicyPage() {
@@ -40,7 +41,7 @@ export default function PrivacyPolicyPage() {
         >
           <div className="container-23">
             <div className="navbar-wrapper-4">
-              <a href="/" className="navbar-brand-5 w-nav-brand">
+              <Link href="/" className="navbar-brand-5 w-nav-brand">
                 <img
                   src="/images/logo.png"
                   loading="lazy"
@@ -49,11 +50,11 @@ export default function PrivacyPolicyPage() {
                   className="image-13"
                 />
                 <h1 className="heading-3">Detail Geeks</h1>
-              </a>
+              </Link>
 
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
-                  <li><a href="/" className="nav-link-4">Home</a></li>
+                  <li><Link href="/" className="nav-link-4">Home</Link></li>
                   <li><a href="/about-us" className="nav-link-4">About Us</a></li>
                   <li><a href="/pricing" className="nav-link-4">Pricing</a></li>
                   <li><a href="/contact" className="nav-link-4">Contact</a></li>
@@ -276,7 +277,7 @@ export default function PrivacyPolicyPage() {
                   <li><a className="link-17">How We Disclose Personal Information</a></li>
                   <li><a className="link-17">Category of Personal Information</a></li>
                   <li><a className="link-17">Third Party Websites and Links</a></li>
-                  <li><a className="link-17">Children's Data</a></li>
+                  <li><a className="link-17">Children&apos;s Data</a></li>
                   <li><a className="link-17">Security and Retention of Your Information</a></li>
                   <li><a className="link-17">Contact Us.</a></li>
                 </ul>

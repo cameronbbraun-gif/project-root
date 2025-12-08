@@ -1,5 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
+import Link from "next/link";
+
 export default function Home() {
     return (
       <main>
@@ -15,7 +17,7 @@ export default function Home() {
           >
             <div className="container-23">
               <div className="navbar-wrapper-4">
-                <a href="/" className="navbar-brand-5 w-nav-brand">
+                <Link href="/" className="navbar-brand-5 w-nav-brand">
                   <img
                     src="/images/logo.png"
                     loading="lazy"
@@ -24,12 +26,12 @@ export default function Home() {
                     className="image-13"
                   />
                   <h1 className="heading-3">Detail Geeks</h1>
-                </a>
+                </Link>
   
                 <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                   <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                     <li>
-                      <a href="/" className="nav-link-4 w--current">Home</a>
+                      <Link href="/" className="nav-link-4 w--current">Home</Link>
                     </li>
                     <li className="list-item">
                       <a href="/about-us" className="nav-link-4">About Us</a>

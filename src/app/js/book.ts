@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 (function () {
   const stripePublicKey = "pk_test_51RUynnChISbTJ9pZEcGL0hmmtYiESdAP44FwucoUxI7uvLnix9mDCJdUWLtbhIigS7FjbleR01IOXXfp5s4YKxWh00usslLdM9"; // ← Insert your pk_live_ or pk_test_ key here
@@ -210,7 +211,7 @@
     $('#package-name')  && ($('#package-name').textContent  = pkgName);
     $('#package-price') && ($('#package-price').textContent = fmt(pkgPrice));
 
-    let addonNames = [];
+    const addonNames = [];
     let addonsTotal = 0;
     $$('.checkbox-field-2 input[type="checkbox"]').forEach(cb => {
       if (!cb.checked) return;
