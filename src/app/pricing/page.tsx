@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { initPricing } from "./pricing";
 import "./pricing.css";
@@ -22,7 +23,7 @@ export default function PricingPage() {
         >
           <div className="container-23">
             <div className="navbar-wrapper-4">
-              <a href="/" className="navbar-brand-5 w-nav-brand">
+              <Link href="/" className="navbar-brand-5 w-nav-brand">
                 <img
                   src="/images/logo.png"
                   loading="lazy"
@@ -31,45 +32,45 @@ export default function PricingPage() {
                   className="image-13"
                 />
                 <h1 className="heading-3">Detail Geeks</h1>
-              </a>
+              </Link>
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                   <li>
-                    <a href="/" className="nav-link-4">
+                    <Link href="/" className="nav-link-4">
                       Home
-                    </a>
+                    </Link>
                   </li>
                   <li className="list-item">
-                    <a href="/about-us" className="nav-link-4">
+                    <Link href="/about-us" className="nav-link-4">
                       About Us
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/pricing"
                       aria-current="page"
                       className="nav-link-4 w--current"
                     >
                       Pricing
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a href="/contact" className="nav-link-4">
+                    <Link href="/contact" className="nav-link-4">
                       Contact
-                    </a>
+                    </Link>
                   </li>
                   <li>
                     <div className="nav-divider-3" />
                   </li>
                   <li className="mobile-margin-top-14">
-                    <a href="/get-a-quote" className="button-primary-8 w-button">
+                    <Link href="/get-a-quote" className="button-primary-8 w-button">
                       Get a Quote
-                    </a>
+                    </Link>
                   </li>
                   <li className="mobile-margin-top-14">
-                    <a href="/book" className="button-primary-7 w-button">
+                    <Link href="/book" className="button-primary-7 w-button">
                       Book Now
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </nav>
@@ -95,14 +96,14 @@ export default function PricingPage() {
             </div>
             <div className="button-wrapper-5">
               <div className="actions-11">
-                <a href="/book" className="button-style-16">
+                <Link href="/book" className="button-style-16">
                   <div className="text-73">Book Now</div>
-                </a>
+                </Link>
               </div>
               <div className="actions-11">
-                <a href="/pricing" className="button-style-17">
+                <Link href="/pricing" className="button-style-17">
                   <div className="text-73">Learn More</div>
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -272,9 +273,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-20">
+                  <Link href="/book" className="button-style-20">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -366,9 +367,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-20">
+                  <Link href="/book" className="button-style-20">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -477,9 +478,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-20">
+                  <Link href="/book" className="button-style-20">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -573,9 +574,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-20">
+                  <Link href="/book" className="button-style-20">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -656,9 +657,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-21">
+                  <Link href="/book" className="button-style-21">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -760,9 +761,9 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="actions-13">
-                  <a href="/book" className="button-style-22">
+                  <Link href="/book" className="button-style-22">
                     <div className="text-81">Book Now</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -875,18 +876,18 @@ export default function PricingPage() {
             </div>
             <div className="column-20">
               <div className="actions-10">
-                <a href="/book" className="button-style-14">
+                <Link href="/book" className="button-style-14">
                   <div className="text-69">Book Now</div>
-                </a>
+                </Link>
               </div>
               <div className="actions-10">
-                <a
+                <Link
                   href="/pricing"
                   aria-current="page"
                   className="button-style-15 w--current"
                 >
                   <div className="text-70">Learn More</div>
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -959,28 +960,28 @@ export default function PricingPage() {
               <div className="content-style-5">
                 <div className="text-60">Quick Links</div>
                 <div className="footer-links">
-                  <a href="/about-us" className="link">
+                  <Link href="/about-us" className="link">
                     About Us
-                  </a>
+                  </Link>
                   <div className="link-style">
-                    <a href="/pricing" className="link-2">
+                    <Link href="/pricing" className="link-2">
                       Pricing
-                    </a>
+                    </Link>
                   </div>
                   <div className="link-style">
-                    <a href="/book" className="link-3">
+                    <Link href="/book" className="link-3">
                       Book Now
-                    </a>
+                    </Link>
                   </div>
                   <div className="link-style">
-                    <a href="/get-a-quote" className="link-4">
+                    <Link href="/get-a-quote" className="link-4">
                       Get a Quote
-                    </a>
+                    </Link>
                   </div>
                   <div className="link-style">
-                    <a href="/gallery" className="link-5">
+                    <Link href="/gallery" className="link-5">
                       Gallery
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1082,14 +1083,14 @@ export default function PricingPage() {
             </div>
             <div className="title-style">
               <div className="text-61">
-                <a href="/privacy-policy" className="link-11">
+                <Link href="/privacy-policy" className="link-11">
                   Privacy Policy
-                </a>
+                </Link>
               </div>
               <div className="text-61">
-                <a href="/terms-of-service" className="link-12">
+                <Link href="/terms-of-service" className="link-12">
                   Terms of Service
-                </a>
+                </Link>
               </div>
               <div className="text-61">
                 <a href="#" className="link-13">
