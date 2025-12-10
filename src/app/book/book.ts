@@ -711,7 +711,17 @@ export interface StripeCardElement {
       data: {
         payment_method: {
           card: StripeCardElement;
-          billing_details: { name: string };
+          billing_details: {
+            name?: string;
+            email?: string;
+            address?: {
+              line1?: string;
+              city?: string;
+              state?: string;
+              postal_code?: string;
+              country?: string;
+            };
+          };
         };
       }
     ): Promise<{
