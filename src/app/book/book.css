@@ -871,6 +871,9 @@
   min-height: 38px;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .card-row {
@@ -915,6 +918,14 @@
 
 .card-element.small-element {
   min-height: 38px;
+  pointer-events: auto;
+}
+
+.card-element iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: auto;
 }
 
 .deposit-info-card {

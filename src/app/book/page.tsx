@@ -70,6 +70,9 @@ export default function BookingPage() {
 
 
       <Script src="https://js.stripe.com/v3/" />
+      <Script id="dg-stripe-key" strategy="beforeInteractive">{`
+        window.__STRIPE_PUBLIC_KEY = "${process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY ?? process.env.STRIPE_TEST_PUBLIC_KEY ?? process.env.STRIPE_PUBLIC_KEY ?? ""}";
+      `}</Script>
 
       <Script id="dg-vars">{`
         window.DG_SERVICE_CENTER_LAT = 28.209820080280995;

@@ -6,6 +6,7 @@ const ALLOWED_ORIGINS = [
   "http://127.0.0.1:5500",
   "http://localhost:5500",
   "https://detailgeeksautospa.com",
+  "https://www.detailgeeksautospa.com",
 ];
 
 function corsHeaders(origin) {
@@ -57,15 +58,14 @@ export async function POST(req) {
       amount: Math.round(amount * 100), // convert dollars to cents
       currency: "usd",
       description: description || "Detail Geeks deposit",
-      payment_method_types: ["card", "link"],
       automatic_payment_methods: {
-        enabled: true       
+        enabled: true,
       },
       receipt_email: email || undefined,
       metadata: {
         ...metadata,
         customer_name: name || "",
-      }
+      },
     });
 
     return new Response(
@@ -80,6 +80,8 @@ export async function POST(req) {
     );
   } catch (err) {
     console.error("[Stripe] create-payment-intent error:", err);
+    const origin = req.headers?.get?.("origin") || "";
+    const allow = ALLOWED_ORIGINS.includes(origin) ? origin : "https://detailgeeksautospa.com";
     return new Response(
       JSON.stringify({ error: "Unable to create payment intent" }),
       {

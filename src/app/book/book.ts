@@ -167,11 +167,11 @@ export function initStepSystem() {
     updateStepUI();
   }
 
-  export function updateStepUI() {
-    const current = stepState.current;
-  
-    stepState.steps.forEach((step) => {
-      const n = Number(step.dataset.step);
+export function updateStepUI() {
+  const current = stepState.current;
+
+  stepState.steps.forEach((step) => {
+    const n = Number(step.dataset.step);
       const active = n === current;
       step.classList.toggle("is-active", active);
       step.setAttribute("aria-hidden", active ? "false" : "true");
@@ -189,12 +189,16 @@ export function initStepSystem() {
       label.classList.toggle("is-complete", n < current);
     });
   
-    stepState.connectors.forEach((con) => {
-      const to = Number(con.dataset.to);
-      con.classList.toggle("is-active", stepState.current === to);
-      con.classList.toggle("is-complete", stepState.current >= to);
-    });
+  stepState.connectors.forEach((con) => {
+    const to = Number(con.dataset.to);
+    con.classList.toggle("is-active", stepState.current === to);
+    con.classList.toggle("is-complete", stepState.current >= to);
+  });
+
+  if (stepState.current === 5) {
+    void ensurePaymentInit();
   }
+}
 
 export function goToStep(target: number) {
   const max = stepState.steps.length || 1;
@@ -919,23 +923,23 @@ declare global {
   }
 }
   
-  export interface PaymentState {
-    stripe: StripeInstance | null;
-    cardElement: StripeCardElement | null;
-    clientSecret: string | null;
-  }
-  
-  export const payState: PaymentState = {
-    stripe: null,
-    cardElement: null,
-    clientSecret: null,
-  };
+export interface PaymentState {
+  stripe: StripeInstance | null;
+  cardElement: StripeCardElement | null;
+  clientSecret: string | null;
+}
+
+export const payState: PaymentState = {
+  stripe: null,
+  cardElement: null,
+  clientSecret: null,
+};
+let paymentInitialized = false;
 
   export const API_BASE =
-    typeof window !== "undefined" &&
-    window.location.hostname.includes("localhost")
+    typeof window === "undefined"
       ? "http://localhost:3000"
-      : "https://detailgeeksautospa.com";
+      : "";
   
 export async function createPaymentIntent(amount: number) {
   const booking = collectBookingData();
@@ -982,18 +986,28 @@ export async function initStripe() {
   }
 
   const pk =
+    (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY as string | undefined) ||
     (process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY as string | undefined) ||
-    (process.env.STRIPE_TEST_PUBLIC_KEY as string | undefined) ||
-    (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string | undefined) ||
+    (window as Window & { __STRIPE_PUBLIC_KEY?: string }).__STRIPE_PUBLIC_KEY ||
     "";
 
   if (!pk) {
-    console.error("Stripe public key is not set.");
+    console.error("Stripe public key is not set. Add NEXT_PUBLIC_STRIPE_PUBLIC_KEY or NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY.");
     return null;
   }
 
   payState.stripe = window.Stripe(pk) as StripeInstance;
   return payState.stripe;
+}
+
+async function ensurePaymentInit() {
+  if (paymentInitialized) return;
+  paymentInitialized = true;
+  try {
+    await initPaymentSystem();
+  } catch (err) {
+    console.error("Payment init failed:", err);
+  }
 }
   
 
@@ -1427,7 +1441,7 @@ export function initButtons() {
 
   if (stepState.current === 5) {
     updateOrderSummaryCard();
-    initPaymentSystem();
+    void ensurePaymentInit();
   }
   
   console.log("%cBooking System Initialized", "color: #00aaff; font-size: 18px;");
