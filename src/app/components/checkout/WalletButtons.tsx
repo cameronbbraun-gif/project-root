@@ -19,7 +19,6 @@ interface WalletButtonsProps {
 
 const paymentButtonStyle = {
   paymentRequestButton: {
-    height: "44px",
     theme: "dark" as const,
     type: "default" as const,
   },
@@ -73,13 +72,20 @@ export default function WalletButtons({
     });
 
     const handlePaymentMethod = async (event: PaymentRequestPaymentMethodEvent) => {
+      const callbacks = latestCallbacksRef.current;
+      if (!stripe) {
+        event.complete("fail");
+        callbacks.onError("Payment system isn\u2019t ready. Please try again.");
+        return;
+      }
+
       const {
         termsAccepted: latestTerms,
         onError: latestOnError,
         onProcessingChange: latestOnProcessingChange,
         createPaymentIntent: latestCreatePaymentIntent,
         onPaymentSuccess: latestOnPaymentSuccess,
-      } = latestCallbacksRef.current;
+      } = callbacks;
 
       if (!latestTerms) {
         event.complete("fail");
@@ -188,6 +194,7 @@ export default function WalletButtons({
           options={{
             paymentRequest: paymentRequestRef.current,
             style: paymentButtonStyle,
+            disableMultipleButtons: false,
           }}
         />
       </div>

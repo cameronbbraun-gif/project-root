@@ -128,7 +128,10 @@ function CheckoutPaymentStepInner() {
   }, []);
 
   const handleCardPayment = useCallback(async () => {
-    if (!stripe || !elements) return;
+    if (!stripe || !elements) {
+      setMessage("Payment is still initializing. Please try again in a moment.");
+      return;
+    }
     if (!termsAccepted) {
       setMessage("Please agree to the terms before paying.");
       return;
