@@ -9,7 +9,8 @@ import Link from "next/link";
 import Script from "next/script";
 import { useEffect } from "react";
 
-import { initBookingSystem } from "./book";
+import CheckoutPaymentStep from "../components/checkout/CheckoutPaymentStep";
+import "./book.css";
 
 
 
@@ -35,7 +36,20 @@ export default function BookingPage() {
     }
   }, []);
   useEffect(() => {
-    initBookingSystem();
+    let mounted = true;
+
+    const loadBooking = async () => {
+      const { initBookingSystem } = await import("./book");
+      if (mounted) {
+        initBookingSystem();
+      }
+    };
+
+    void loadBooking();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
     return (
       <>
@@ -67,13 +81,6 @@ export default function BookingPage() {
           }
         }}
       />
-
-
-      <Script src="https://js.stripe.com/v3/" />
-      <Script id="dg-stripe-key" strategy="beforeInteractive">{`
-        window.__STRIPE_PUBLIC_KEY = "${process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY ?? process.env.STRIPE_TEST_PUBLIC_KEY ?? process.env.STRIPE_PUBLIC_KEY ?? ""}";
-      `}</Script>
-
       <Script id="dg-vars">{`
         window.DG_SERVICE_CENTER_LAT = 28.209820080280995;
         window.DG_SERVICE_CENTER_LNG = -82.35380942519879;
@@ -199,7 +206,7 @@ export default function BookingPage() {
                   <div className="div-block-36 progress-step" data-step="5">
                     <p className="paragraph-6">5</p>
                   </div>
-                  <h4 className="heading-11 progress-label">Payment</h4>
+                  <h4 className="heading-11 progress-label">Review</h4>
                 </div>
               </div>
             </div>
@@ -1059,191 +1066,13 @@ export default function BookingPage() {
             </a>
 
             <a href="#" className="nextbutton w-inline-block" data-next>
-              <div className="nexttext">Continue to Payment</div>
+              <div className="nexttext">Review &amp; Confirm</div>
               <img src="/images/next.svg" className="nextarrow" />
             </a>
           </div>
         </div>
 
-                <div
-          className="w-layout-vflex flex-block-338 form-step"
-          data-step="5"
-          id="step-5"
-          role="region"
-          aria-labelledby="step-5-label"
-        >
-          <div className="order-summary-card">
-            <div className="order-summary-header">Order Summary</div>
-
-            <div className="order-line" id="order-primary-line">
-              <div className="order-line-text">
-                <div className="order-line-title" id="order-service-name">Premium Full Detail</div>
-                <div className="order-line-subtitle" id="order-service-subtitle">Complete interior & exterior detailing</div>
-              </div>
-              <div className="order-line-price" id="order-service-price">$0</div>
-            </div>
-
-            <div className="order-addons" id="order-addons"></div>
-
-            <div className="order-divider" />
-
-            <div className="payment-summary-card">
-              <div className="payment-summary-title">Payment Summary</div>
-
-              <div className="payment-line">
-                <div className="payment-line-label">Service Total:</div>
-                <div id="payment-service-total" className="payment-line-value">$0.00</div>
-              </div>
-
-              <div className="payment-line">
-                <div className="payment-line-label">Deposit Due Now:</div>
-                <div id="payment-deposit" className="payment-line-value">$0.00</div>
-              </div>
-
-              <div className="payment-divider" />
-
-              <div className="payment-line">
-                <div className="payment-line-label">Remaining Balance (Day of Service):</div>
-                <div id="payment-balance" className="payment-line-value">$0.00</div>
-              </div>
-            </div>
-
-            <div className="order-info-box">
-              <div className="order-info-row">
-                <img src="/images/calendar.svg" alt="" />
-                <span id="order-date-time">Select a date & time</span>
-              </div>
-              <div className="order-info-row">
-                <img src="/images/address.svg" alt="" />
-                <span id="order-address">Add your service address</span>
-              </div>
-              <div className="order-info-row">
-                <img src="/images/car.svg" alt="" />
-                <span id="order-vehicle">Add vehicle details</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="checkout-card">
-            <div className="express-divider">
-              <span>Express Checkout</span>
-            </div>
-
-            <div className="express-buttons">
-              <div id="payment-request-button" className="express-btn wallet-btn apple-btn"></div>
-              <div id="payment-request-button-google" className="express-btn wallet-btn google-btn"></div>
-              <div id="link-authentication" className="express-btn wallet-btn link-btn"></div>
-            </div>
-
-            <div className="or-divider">
-              <span>or</span>
-            </div>
-
-            <div className="card-form">
-              <div className="card-form-title">Pay by card</div>
-
-              <label htmlFor="billing-street" className="card-label">Billing Address *</label>
-              <input
-                id="billing-street"
-                name="billing-street"
-                className="card-input"
-                type="text"
-                autoComplete="billing street-address"
-              />
-
-              <div className="card-row">
-                <div className="card-field">
-                  <label htmlFor="billing-city" className="card-label">City *</label>
-                  <input
-                    id="billing-city"
-                    name="billing-city"
-                    className="card-input"
-                    type="text"
-                    autoComplete="billing address-level2"
-                  />
-                </div>
-                <div className="card-field">
-                  <label htmlFor="billing-state" className="card-label">State *</label>
-                  <input
-                    id="billing-state"
-                    name="billing-state"
-                    className="card-input"
-                    type="text"
-                    autoComplete="billing address-level1"
-                  />
-                </div>
-                <div className="card-field">
-                  <label htmlFor="billing-zip" className="card-label">ZIP Code *</label>
-                  <input
-                    id="billing-zip"
-                    name="billing-zip"
-                    className="card-input"
-                    type="text"
-                    autoComplete="billing postal-code"
-                  />
-                </div>
-              </div>
-
-              <label htmlFor="cardholder-name" className="card-label">Cardholder Name *</label>
-              <input id="cardholder-name" name="cardholder-name" className="card-input" type="text" autoComplete="cc-name" />
-
-              <label className="card-label">Card Number *</label>
-              <div id="card-element" className="card-element"></div>
-
-              <div className="card-row card-row-spaced">
-                <div className="card-field">
-                  <label htmlFor="card-expiry" className="card-label">Expiration Date *</label>
-                  <div id="card-expiry" className="card-element small-element"></div>
-                </div>
-                <div className="card-field">
-                  <label htmlFor="card-cvc" className="card-label">CVV *</label>
-                  <div id="card-cvc" className="card-element small-element"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="deposit-info-card">
-            <div className="deposit-info-header">
-              <img src="/images/info.svg" alt="" className="deposit-info-icon" />
-              <div className="deposit-info-title">Deposit Payment</div>
-            </div>
-            <div id="deposit-info-text" className="deposit-info-text">
-              You&apos;re paying a $0 deposit today to secure your booking. The remaining balance of $0 will be collected on service day.
-            </div>
-            <div className="deposit-amount-box">
-              <div className="deposit-amount-label">Deposit Amount:</div>
-              <div id="deposit-amount-display" className="deposit-amount-value">$0</div>
-            </div>
-          </div>
-
-          <label className="terms-check">
-            <input type="checkbox" id="terms-agree" name="terms-agree" />
-            <span>
-              I agree to the{" "}
-              <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="terms-link">Terms of Service</a>
-              {" "}and{" "}
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="terms-link">Privacy Policy</a>.
-              {" "}I understand that a <span id="terms-deposit-amount">$50</span> deposit is required to secure my booking and the remaining balance will be collected on service day.
-            </span>
-          </label>
-
-          <div className="w-layout-hflex flex-block-19">
-            <a href="#" className="back-button w-inline-block" data-back>
-              <img src="/images/back.svg" className="back-arrow" />
-              <div className="back-text">Back</div>
-            </a>
-
-            <a
-              href="#"
-              id="completeBooking"
-              className="button-primary-7 w-inline-block"
-            >
-              <div className="nexttext">Confirm & Pay</div>
-              <img src="/images/next.svg" className="nextarrow" />
-            </a>
-          </div>
-        </div>
+        <CheckoutPaymentStep />
 
       </form>
       {/* END FORM */}

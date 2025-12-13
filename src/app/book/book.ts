@@ -22,9 +22,31 @@ export type PriceTable = PriceSet;
   
   export type VehicleType = "sedan" | "suv" | "truck";
   
-  export interface DurationMap {
-    [key: string]: string;
-  }
+export interface DurationMap {
+  [key: string]: string;
+}
+
+export interface ServiceAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+export interface BookingPaymentSummary {
+  packageName: string;
+  addons: string[];
+  total: number;
+  deposit: number;
+  balance: number;
+  dateTimeText: string;
+  vehicleLine: string;
+  customerName: string;
+  email: string;
+  serviceAddress: ServiceAddress;
+}
+
+export const PAYMENT_SUMMARY_EVENT = "dg:payment-summary";
   
   export const $ = <T extends HTMLElement = HTMLElement>(
     sel: string,
@@ -195,9 +217,6 @@ export function updateStepUI() {
     con.classList.toggle("is-complete", stepState.current >= to);
   });
 
-  if (stepState.current === 5) {
-    void ensurePaymentInit();
-  }
 }
 
 export function goToStep(target: number) {
@@ -691,49 +710,6 @@ export function updateStep3ServiceSummary() {
     $("#prevMonth")?.addEventListener("click", prevMonth);
   }
   
-declare global {
-    interface Window {
-      DG_SERVICE_CENTER_LAT: number;
-      DG_SERVICE_CENTER_LNG: number;
-      DG_GMAPS_API_KEY: string;
-    }
-  }
-
-export interface StripeCardElement {
-    mount(selector: string): void;
-  }
-  
-  export interface StripeElements {
-    create(type: string, options?: unknown): StripeCardElement;
-  }
-  
-  export interface StripeInstance {
-    elements(): StripeElements;
-    paymentRequest(options: unknown): unknown;
-    confirmCardPayment(
-      clientSecret: string,
-      data: {
-        payment_method: {
-          card: StripeCardElement;
-          billing_details: {
-            name?: string;
-            email?: string;
-            address?: {
-              line1?: string;
-              city?: string;
-              state?: string;
-              postal_code?: string;
-              country?: string;
-            };
-          };
-        };
-      }
-    ): Promise<{
-      error?: unknown;
-      paymentIntent?: { status: string };
-    }>;
-  }
-  
   export function validateRequiredField(id: string): boolean {
     const el = $<HTMLInputElement>(`#${id}`);
     if (!el) return false;
@@ -769,11 +745,58 @@ export interface StripeCardElement {
     const el = $<HTMLInputElement>(`#${id}`);
     if (!el) return false;
   
-    const valid = /^\d{5}$/.test(el.value.trim());
-    el.classList.toggle("input-error", !valid);
-  
-    return valid;
-  }
+  const valid = /^\d{5}$/.test(el.value.trim());
+  el.classList.toggle("input-error", !valid);
+
+  return valid;
+}
+
+export function getServiceAddressFields(): ServiceAddress {
+  return {
+    street: $<HTMLInputElement>("#street-address")?.value?.trim() ?? "",
+    city: $<HTMLInputElement>("#city")?.value?.trim() ?? "",
+    state: $<HTMLInputElement>("#state")?.value?.trim() ?? "",
+    zip: $<HTMLInputElement>("#zip-code")?.value?.trim() ?? "",
+  };
+}
+
+export function getCustomerContact() {
+  const firstName = $<HTMLInputElement>("#first-name")?.value?.trim() ?? "";
+  const lastName = $<HTMLInputElement>("#last-name")?.value?.trim() ?? "";
+  const email = $<HTMLInputElement>("#email-address")?.value?.trim() ?? "";
+
+  return { firstName, lastName, email };
+}
+
+export function getBookingPaymentSummary(): BookingPaymentSummary {
+  const { pkgName, addons, total } = getSelectedPackageAndAddons();
+  const deposit = calculateDeposit(total);
+  const address = getServiceAddressFields();
+  const { firstName, lastName, email } = getCustomerContact();
+  const customerName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    packageName: pkgName,
+    addons: addons.map((a) => a.name),
+    total,
+    deposit,
+    balance: Math.max(total - deposit, 0),
+    dateTimeText: formatDateTimeForSummary(),
+    vehicleLine: formatVehicleLine(),
+    customerName,
+    email,
+    serviceAddress: address,
+  };
+}
+
+export function broadcastPaymentSummary(): BookingPaymentSummary | null {
+  if (typeof document === "undefined") return null;
+  const detail = getBookingPaymentSummary();
+  document.dispatchEvent(
+    new CustomEvent<BookingPaymentSummary>(PAYMENT_SUMMARY_EVENT, { detail })
+  );
+  return detail;
+}
     
   export async function geocodeAddress(): Promise<{ lat: number; lng: number } | null> {
     const street = $<HTMLInputElement>("#street-address")?.value ?? "";
@@ -915,178 +938,12 @@ export interface StripeCardElement {
   }
 
 declare global {
-  interface Window {
-    Stripe?: (key: string) => StripeInstance;
-    DG_SERVICE_CENTER_LAT: number;
-    DG_SERVICE_CENTER_LNG: number;
-    DG_GMAPS_API_KEY: string;
-  }
-}
-  
-export interface PaymentState {
-  stripe: StripeInstance | null;
-  cardElement: StripeCardElement | null;
-  clientSecret: string | null;
-}
-
-export const payState: PaymentState = {
-  stripe: null,
-  cardElement: null,
-  clientSecret: null,
-};
-let paymentInitialized = false;
-
-  export const API_BASE =
-    typeof window === "undefined"
-      ? "http://localhost:3000"
-      : "";
-  
-export async function createPaymentIntent(amount: number) {
-  const booking = collectBookingData();
-  const url = `${API_BASE}/api/stripe/create-payment-intent`;
-
-  const fullName = `${booking.name.first} ${booking.name.last}`.trim();
-  const description = booking.service || "Detail Geeks deposit";
-  const addressLine = [booking.address.street, booking.address.city, booking.address.state, booking.address.zip]
-    .filter(Boolean)
-    .join(", ");
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      amount,
-      email: booking.contact.email,
-      name: fullName,
-      description,
-      metadata: {
-        service: booking.service,
-        addons: booking.addons.join(", "),
-        date: booking.date,
-        time: booking.time,
-        phone: booking.contact.phone,
-        address: addressLine,
-      },
-    }),
-  });
-
-  if (!res.ok) throw new Error("Failed to create payment intent");
-  
-    const data = await res.json();
-    payState.clientSecret = data.clientSecret;
-    return data.clientSecret;
-  }
-  
-export async function initStripe() {
-  if (payState.stripe) return payState.stripe;
-
-  if (!window.Stripe) {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return initStripe();
-  }
-
-  const pk =
-    (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY as string | undefined) ||
-    (process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY as string | undefined) ||
-    (window as Window & { __STRIPE_PUBLIC_KEY?: string }).__STRIPE_PUBLIC_KEY ||
-    "";
-
-  if (!pk) {
-    console.error("Stripe public key is not set. Add NEXT_PUBLIC_STRIPE_PUBLIC_KEY or NEXT_PUBLIC_STRIPE_TEST_PUBLIC_KEY.");
-    return null;
-  }
-
-  payState.stripe = window.Stripe(pk) as StripeInstance;
-  return payState.stripe;
-}
-
-async function ensurePaymentInit() {
-  if (paymentInitialized) return;
-  paymentInitialized = true;
-  try {
-    await initPaymentSystem();
-  } catch (err) {
-    console.error("Payment init failed:", err);
-  }
-}
-  
-
-export async function mountCardElement() {
-  const stripe = await initStripe();
-  if (!stripe) return;
-  const elements = stripe.elements();
-
-  const appearance = {
-    theme: "flat",
-    variables: {
-      fontFamily: "Outfit, sans-serif",
-      fontSizeBase: "14px",
-      borderRadius: "10px",
-      colorText: "#111827",
-      colorBackground: "#ffffff",
-      colorBorder: "#d1d5db",
-      colorDanger: "#ef4444",
-      spacingUnit: "12px",
-    },
-  };
-
-  const card = elements.create("cardNumber", { appearance, showIcon: true });
-  const expiry = elements.create("cardExpiry", { appearance });
-  const cvc = elements.create("cardCvc", { appearance });
-
-  card.mount("#card-element");
-  expiry.mount("#card-expiry");
-  cvc.mount("#card-cvc");
-
-  payState.cardElement = card;
-}
-  
-
-// Interface for Stripe PaymentRequest
-export interface PaymentRequest {
-  canMakePayment(): Promise<null | Record<string, unknown>>;
-  on?(event: string, handler: (ev: unknown) => void): void;
-}
-
-export async function initExpressCheckout(amount: number) {
-  const stripe = await initStripe();
-  if (!stripe) return;
-
-  const prButton = stripe.paymentRequest({
-    country: "US",
-    currency: "usd",
-    total: { label: "Detail Deposit", amount: amount * 100 },
-    requestPayerName: true,
-    requestPayerEmail: true,
-  }) as PaymentRequest;
-
-  prButton.canMakePayment().then((result: null | Record<string, unknown>) => {
-    if (result) {
-      const btn = $("#payment-request-button") as HTMLElement;
-      if (btn) btn.style.display = "block";
-
-      const elements = stripe.elements();
-
-      const elementApple = elements.create("paymentRequestButton", {
-        paymentRequest: prButton,
-        style: { paymentRequestButton: { height: "48px", theme: "dark" } },
-      });
-      elementApple.mount("#payment-request-button");
-
-      const elementGoogle = elements.create("paymentRequestButton", {
-        paymentRequest: prButton,
-        style: { paymentRequestButton: { height: "48px", theme: "light" } },
-      });
-      elementGoogle.mount("#payment-request-button-google");
-
-      const linkContainer = $("#link-authentication");
-      if (linkContainer) {
-        const linkEl = elements.create("linkAuthentication");
-        linkEl.mount("#link-authentication");
-      }
+    interface Window {
+      DG_SERVICE_CENTER_LAT: number;
+      DG_SERVICE_CENTER_LNG: number;
+      DG_GMAPS_API_KEY: string;
     }
-  });
-}
+  }
 
 function formatDateTimeForSummary(): string {
   if (!calendar.selectedDate) return "Select a date & time";
@@ -1131,7 +988,6 @@ export function updateOrderSummaryCard() {
   const serviceNameEl = $("#order-service-name");
   const servicePriceEl = $("#order-service-price");
   const serviceSubtitleEl = $("#order-service-subtitle");
-  const totalEl = $("#order-total-price");
   const addonsContainer = $("#order-addons");
 
   if (serviceNameEl) serviceNameEl.textContent = pkgName;
@@ -1178,8 +1034,6 @@ export function updateOrderSummaryCard() {
     }
   }
 
-  if (totalEl) totalEl.textContent = `$${total}`;
-
   const dateTimeEl = $("#order-date-time");
   if (dateTimeEl) dateTimeEl.textContent = formatDateTimeForSummary();
 
@@ -1189,162 +1043,38 @@ export function updateOrderSummaryCard() {
   const vehicleEl = $("#order-vehicle");
   if (vehicleEl) vehicleEl.textContent = formatVehicleLine();
 
-  updatePaymentSummaryDisplay(total);
+  updateCostSummaryDisplay(total);
+  broadcastPaymentSummary();
 }
 
-function updatePaymentSummaryDisplay(total: number) {
+function updateCostSummaryDisplay(total: number) {
   const deposit = calculateDeposit(total);
   const balance = Math.max(total - deposit, 0);
 
-  const serviceTotalEl = $("#payment-service-total");
-  const depositEl = $("#payment-deposit");
-  const balanceEl = $("#payment-balance");
-  const depositInfoEl = $("#deposit-info-text");
+  const serviceTotalEl = $("#cost-service-total");
+  const depositEl = $("#cost-deposit");
+  const balanceEl = $("#cost-balance");
   const depositAmountDisplayEl = $("#deposit-amount-display");
+  const depositBalanceDisplayEl = $("#deposit-balance-display");
   const termsDepositEl = $("#terms-deposit-amount");
 
   if (serviceTotalEl) serviceTotalEl.textContent = `$${total.toFixed(2)}`;
   if (depositEl) depositEl.textContent = `$${deposit.toFixed(2)}`;
   if (balanceEl) balanceEl.textContent = `$${balance.toFixed(2)}`;
   if (depositAmountDisplayEl) depositAmountDisplayEl.textContent = `$${deposit.toFixed(2)}`;
+  if (depositBalanceDisplayEl) depositBalanceDisplayEl.textContent = `$${balance.toFixed(2)}`;
   if (termsDepositEl) termsDepositEl.textContent = `$${deposit.toFixed(2)}`;
-
-  if (depositInfoEl) {
-    depositInfoEl.textContent = `You’re paying a $${deposit.toFixed(
-      2
-    )} deposit today to secure your booking. The remaining balance of $${balance.toFixed(
-      2
-    )} will be collected on service day.`;
-  }
 }
-  
-
-  export async function initLinkButton() {
-    const btn = $("#link-express-button") as HTMLElement;
-    if (!btn) return;
-    btn.style.display = "block";
-  }
   
 
   export function calculateDeposit(total: number): number {
     return total >= 200 ? 40 : 20;
   }
-  
-
-export async function finalBookSubmit() {
-  const stripe = await initStripe();
-  if (!stripe || !payState.cardElement) return;
-
-  const name = (document.querySelector("#cardholder-name") as HTMLInputElement | null)?.value ?? "";
-  const email = (document.querySelector("#email-address") as HTMLInputElement | null)?.value ?? "";
-  const billingStreet = (document.querySelector("#billing-street") as HTMLInputElement | null)?.value ?? "";
-  const billingCity = (document.querySelector("#billing-city") as HTMLInputElement | null)?.value ?? "";
-  const billingState = (document.querySelector("#billing-state") as HTMLInputElement | null)?.value ?? "";
-  const billingZip = (document.querySelector("#billing-zip") as HTMLInputElement | null)?.value ?? "";
-  const confirmUrl = `${API_BASE}/api/stripe/payment-confirmed`;
-
-  const { error, paymentIntent } = await stripe!.confirmCardPayment(
-    payState.clientSecret!,
-    {
-      payment_method: {
-        card: payState.cardElement,
-        billing_details: {
-          name,
-          email,
-          address: {
-            line1: billingStreet,
-            city: billingCity,
-            state: billingState,
-            postal_code: billingZip,
-            country: "US",
-          },
-        },
-      },
-    }
-  );
-
-  if (error) {
-    console.error(error);
-    window.location.href = "/book/booking-error";
-    return;
-  }
-
-  if (paymentIntent?.status === "succeeded") {
-    await fetch(confirmUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: true }),
-    });
-
-    window.location.href = "/book/booking-success";
-  }
-}
-  
-
-  export function collectBookingData() {
-    return {
-      date: calendar.selectedDate,
-      time: calendar.selectedTime,
-      vehicleType,
-      service: $("#summary-service")?.textContent ?? "",
-      duration: $("#summary-duration")?.textContent ?? "",
-      addons: $$(".checkbox-field-2 input[type='checkbox']")
-        .filter((c) => (c as HTMLInputElement).checked)
-        .map((c) =>
-          c.closest("label")?.querySelector(".heading-18")?.textContent ?? ""
-        ),
-      name: {
-        first: (document.querySelector("#first-name") as HTMLInputElement | null)?.value ?? "",
-        last: (document.querySelector("#last-name") as HTMLInputElement | null)?.value ?? "",
-      },
-      contact: {
-        email: (document.querySelector("#email-address") as HTMLInputElement | null)?.value ?? "",
-        phone: (document.querySelector("#phone-number") as HTMLInputElement | null)?.value ?? "",
-      },
-      address: {
-        street: (document.querySelector("#street-address") as HTMLInputElement | null)?.value ?? "",
-        city: (document.querySelector("#city") as HTMLInputElement | null)?.value ?? "",
-        state: (document.querySelector("#state") as HTMLInputElement | null)?.value ?? "",
-        zip: (document.querySelector("#zip-code") as HTMLInputElement | null)?.value ?? "",
-      },
-    };
-  }
-  
-export async function initPaymentSystem() {
-  await mountCardElement();
-
-  const totalText = $("#total-price")?.textContent ?? "$0";
-  const total = Number(totalText.replace("$", ""));
-
-  const deposit = calculateDeposit(total);
-  const depositDisplay = $("#deposit-amount-display");
-  if (depositDisplay) {
-    depositDisplay.textContent = `$${deposit.toFixed(2)}`;
-  }
-  updatePaymentSummaryDisplay(total);
-
-  const clientSecret = await createPaymentIntent(deposit);
-  payState.clientSecret = clientSecret!;
-
-  await initExpressCheckout(deposit);
-  await initLinkButton();
-
-  const btn = document.querySelector<HTMLElement>("#completeBooking");
-  if (btn) {
-    btn.addEventListener("click", async () => {
-      const ok = await validateContactInfo();
-      if (!ok) return;
-      await finalBookSubmit();
-    });
-  }
-}
 
 export function initButtons() {
     $$("[data-next]").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         e.preventDefault();
-  
-        const label = btn.textContent?.trim() ?? "";
   
         if (stepState.current === 1) {
           detectVehicleType();
@@ -1379,10 +1109,6 @@ export function initButtons() {
           updateOrderSummaryCard();
         }
 
-        if (stepState.current === 5 && label.includes("Confirm")) {
-          return;
-        }
-  
         goNextStep();
       });
     });
@@ -1439,10 +1165,7 @@ export function initButtons() {
 
   initContactInfoStep();
 
-  if (stepState.current === 5) {
-    updateOrderSummaryCard();
-    void ensurePaymentInit();
-  }
+  updateOrderSummaryCard();
   
   console.log("%cBooking System Initialized", "color: #00aaff; font-size: 18px;");
 }
