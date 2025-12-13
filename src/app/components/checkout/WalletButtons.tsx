@@ -1,20 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { PaymentRequestButtonElement, useStripe } from "@stripe/react-stripe-js";
 import type {
   PaymentRequest as StripePaymentRequest,
   PaymentRequestPaymentMethodEvent,
 } from "@stripe/stripe-js";
-
-type WalletKey = "applePay" | "googlePay" | "link";
-
-const walletOrder: WalletKey[] = ["applePay", "googlePay", "link"];
-const emptyRequests: Record<WalletKey, StripePaymentRequest | null> = {
-  applePay: null,
-  googlePay: null,
-  link: null,
-};
 
 interface WalletButtonsProps {
   amount: number;
@@ -26,6 +17,14 @@ interface WalletButtonsProps {
   termsAccepted: boolean;
 }
 
+const paymentButtonStyle = {
+  paymentRequestButton: {
+    height: "44px",
+    theme: "dark" as const,
+    type: "default" as const,
+  },
+};
+
 export default function WalletButtons({
   amount,
   createPaymentIntent,
@@ -36,141 +35,162 @@ export default function WalletButtons({
   termsAccepted,
 }: WalletButtonsProps) {
   const stripe = useStripe();
-  const [paymentRequests, setPaymentRequests] =
-    useState<Record<WalletKey, StripePaymentRequest | null>>(emptyRequests);
-  const [availability, setAvailability] = useState<Record<WalletKey, boolean>>({
-    applePay: false,
-    googlePay: false,
-    link: false,
+  const [canPay, setCanPay] = useState(false);
+  const paymentRequestRef = useRef<StripePaymentRequest | null>(null);
+  const paymentHandlerRef = useRef<((event: PaymentRequestPaymentMethodEvent) => void) | null>(
+    null
+  );
+  const latestCallbacksRef = useRef({
+    termsAccepted,
+    createPaymentIntent,
+    onError,
+    onProcessingChange,
+    onPaymentSuccess,
   });
 
   useEffect(() => {
-    if (!stripe || !amount || disabled) {
-      setAvailability({
-        applePay: false,
-        googlePay: false,
-        link: false,
-      });
-      setPaymentRequests(emptyRequests);
-      return;
-    }
+    latestCallbacksRef.current = {
+      termsAccepted,
+      createPaymentIntent,
+      onError,
+      onProcessingChange,
+      onPaymentSuccess,
+    };
+  }, [termsAccepted, createPaymentIntent, onError, onProcessingChange, onPaymentSuccess]);
 
-    let mounted = true;
-    const cancelHandlers: Array<() => void> = [];
-    const nextRequests: Record<WalletKey, StripePaymentRequest | null> = { ...emptyRequests };
+  useEffect(() => {
+    if (!stripe || paymentRequestRef.current) return;
 
-    walletOrder.forEach((wallet) => {
-      const pr = stripe.paymentRequest({
-        country: "US",
-        currency: "usd",
-        total: {
-          label: "Booking Deposit",
-          amount: Math.max(Math.round(amount * 100), 50),
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-        disableWallets: walletOrder.filter((w) => w !== wallet),
-      });
+    const pr = stripe.paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: {
+        label: "Booking Deposit",
+        amount: 50,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
 
-      pr.canMakePayment()
-        .then((result) => {
-          if (!mounted) return;
-          setAvailability((prev) => ({ ...prev, [wallet]: Boolean(result?.[wallet]) }));
-        })
-        .catch(() => {
-          if (!mounted) return;
-          setAvailability((prev) => ({ ...prev, [wallet]: false }));
-        });
+    const handlePaymentMethod = async (event: PaymentRequestPaymentMethodEvent) => {
+      const {
+        termsAccepted: latestTerms,
+        onError: latestOnError,
+        onProcessingChange: latestOnProcessingChange,
+        createPaymentIntent: latestCreatePaymentIntent,
+        onPaymentSuccess: latestOnPaymentSuccess,
+      } = latestCallbacksRef.current;
 
-      const handlePaymentMethod = async (event: PaymentRequestPaymentMethodEvent) => {
-        if (!termsAccepted) {
+      if (!latestTerms) {
+        event.complete("fail");
+        latestOnError("Please agree to the terms before paying.");
+        return;
+      }
+
+      try {
+        latestOnProcessingChange?.(true);
+        latestOnError("");
+
+        const res = await latestCreatePaymentIntent();
+        const clientSecret = res?.clientSecret;
+        if (!clientSecret) {
           event.complete("fail");
-          onError("Please agree to the terms before paying.");
+          latestOnError("Unable to start payment right now.");
           return;
         }
 
-        try {
-          onProcessingChange?.(true);
-          onError("");
+        const { error } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: event.paymentMethod.id },
+          { handleActions: true }
+        );
 
-          const res = await createPaymentIntent();
-          const clientSecret = res?.clientSecret;
-          if (!clientSecret) {
-            event.complete("fail");
-            onError("Unable to start payment right now.");
-            return;
-          }
-
-          const { error } = await stripe.confirmCardPayment(
-            clientSecret,
-            { payment_method: event.paymentMethod.id },
-            { handleActions: true }
-          );
-
-          if (error) {
-            onError(error.message ?? "Payment failed. Please try another method.");
-            event.complete("fail");
-            return;
-          }
-
-          event.complete("success");
-          onPaymentSuccess();
-        } catch (err) {
-          onError(err instanceof Error ? err.message : "Payment failed. Please try again.");
+        if (error) {
+          latestOnError(error.message ?? "Payment failed. Please try another method.");
           event.complete("fail");
-        } finally {
-          onProcessingChange?.(false);
+          return;
         }
-      };
 
-      pr.on("paymentmethod", handlePaymentMethod);
-      cancelHandlers.push(() => pr.off("paymentmethod", handlePaymentMethod));
-      nextRequests[wallet] = pr;
-    });
+        event.complete("success");
+        latestOnPaymentSuccess();
+      } catch (err) {
+        latestOnError(err instanceof Error ? err.message : "Payment failed. Please try again.");
+        event.complete("fail");
+      } finally {
+        latestOnProcessingChange?.(false);
+      }
+    };
 
-    setPaymentRequests(nextRequests);
+    paymentRequestRef.current = pr;
+    paymentHandlerRef.current = handlePaymentMethod;
+    pr.on("paymentmethod", handlePaymentMethod);
+
+    let mounted = true;
+    pr.canMakePayment()
+      .then((result) => {
+        if (!mounted) return;
+        setCanPay(Boolean(result));
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCanPay(false);
+      });
 
     return () => {
       mounted = false;
-      cancelHandlers.forEach((off) => off());
-      setPaymentRequests(emptyRequests);
+      if (paymentRequestRef.current && paymentHandlerRef.current) {
+        paymentRequestRef.current.off("paymentmethod", paymentHandlerRef.current);
+      }
+      paymentRequestRef.current = null;
+      paymentHandlerRef.current = null;
+      setCanPay(false);
     };
-  }, [
-    stripe,
-    amount,
-    createPaymentIntent,
-    onError,
-    onPaymentSuccess,
-    onProcessingChange,
-    termsAccepted,
-    disabled,
-  ]);
+  }, [stripe]);
 
-  const activeWallets = useMemo(
-    () => walletOrder.filter((wallet) => availability[wallet] && paymentRequests[wallet]),
-    [availability, paymentRequests]
-  );
+  useEffect(() => {
+    let mounted = true;
+    const pr = paymentRequestRef.current;
+    if (!pr) return;
 
-  if (!stripe || activeWallets.length === 0) return null;
+    if (!stripe || !amount || amount <= 0 || disabled) {
+      setCanPay(false);
+      return;
+    }
+
+    pr.update({
+      total: {
+        label: "Booking Deposit",
+        amount: Math.max(Math.round(amount * 100), 50),
+      },
+    });
+
+    pr.canMakePayment()
+      .then((result) => {
+        if (!mounted) return;
+        setCanPay(Boolean(result));
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCanPay(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [amount, disabled, stripe]);
+
+  if (!stripe || !paymentRequestRef.current || !canPay) return null;
 
   return (
     <div className={`wallet-button-grid ${disabled ? "is-disabled" : ""}`}>
-      {activeWallets.map((wallet) => (
-        <div key={wallet} className="wallet-button">
-          <PaymentRequestButtonElement
-            options={{
-              paymentRequest: paymentRequests[wallet] as StripePaymentRequest,
-              style: {
-                paymentRequestButton: {
-                  height: "44px",
-                  theme: "dark",
-                  type: "default",
-                },
-              },
-            }}
-          />
-        </div>
-      ))}
+      <div className="wallet-button">
+        <PaymentRequestButtonElement
+          options={{
+            paymentRequest: paymentRequestRef.current,
+            style: paymentButtonStyle,
+          }}
+        />
+      </div>
     </div>
   );
 }
