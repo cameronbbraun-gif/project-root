@@ -211,7 +211,7 @@ export default function BookingPage() {
               </div>
             </div>
 
-            <div
+            <form
               id="wf-form-Name-Form"
               name="wf-form-Name-Form"
               data-name="Name Form"
@@ -1073,7 +1073,7 @@ export default function BookingPage() {
           </div>
         </div>
         <CheckoutPaymentStep />
-      </div>
+      </form>
     </div>
   </div>
   {/* END FORM */}
