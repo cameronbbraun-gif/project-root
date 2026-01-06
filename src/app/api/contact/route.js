@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
-export const runtime = "nodejs";
- 
+import { getDb } from "@/lib/mongodb";
 import ContactEmail from "@/email/template/contactemail";
+
+export const runtime = "nodejs";
 
 console.log("[contact] route init cwd=", process.cwd());
 
@@ -12,39 +12,6 @@ const ALLOWED_ORIGINS = [
   "http://localhost:5500",
   "https://detailgeeksautospa.com",
 ];
-
-let cached = global.__mongoose_conn;
-if (!cached) {
-  cached = global.__mongoose_conn = { conn: null, promise: null };
-}
-
-async function connectDB() {
-  if (cached.conn) return cached.conn;
-  if (!cached.promise) {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) throw new Error("MONGODB_URI is not set in environment");
-    cached.promise = mongoose
-      .connect(uri, { dbName: process.env.MONGODB_DB || undefined })
-      .then((m) => m);
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
-
-const ContactSchema = new mongoose.Schema(
-  {
-    first_name: { type: String, required: [true, "First name is required"] },
-    last_name:  { type: String, required: [true, "Last name is required"] },
-    email: {
-      type: String,
-      required: [true, "Email is required"],
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Please enter a valid email address"],
-    },
-    message:    { type: String, required: [true, "Message is required"] },
-  },
-  { timestamps: true }
-);
-const Contact = mongoose.models.Contact || mongoose.model("Contact", ContactSchema);
 
 function esc(s = "") {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -139,8 +106,18 @@ export async function POST(req) {
   }
 
   try {
-    await connectDB();
-    await Contact.create({ first_name, last_name, email, message });
+    const db = await getDb();
+    const now = new Date();
+    await db.collection("contacts").insertOne({
+      first_name,
+      last_name,
+      email,
+      message,
+      createdAt: now,
+      updatedAt: now,
+      ip: req.headers.get("x-forwarded-for") || "unknown",
+      ua: req.headers.get("user-agent") || "unknown",
+    });
 
     const ownerEmail = process.env.RESEND_OWNER_EMAIL;
 
@@ -188,10 +165,6 @@ export async function POST(req) {
       { headers }
     );
   } catch (error) {
-    if (error instanceof mongoose.Error.ValidationError) {
-      const errorList = Object.values(error.errors).map((e) => e.message);
-      return NextResponse.json({ msg: errorList }, { status: 400, headers });
-    }
     console.error("[contact] server error:", error);
     return NextResponse.json(
       { msg: ["Internal server error"] },
