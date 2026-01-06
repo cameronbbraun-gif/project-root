@@ -255,6 +255,9 @@ function CheckoutPaymentStepInner() {
         },
         schedule: {
           dateTimeText: summary.dateTimeText,
+          date: summary.selectedDate || "",
+          time: summary.selectedTime || "",
+          durationMinutes: summary.durationMinutes ?? null,
         },
         pricing: {
           total: summary.total,

@@ -41,6 +41,9 @@ export interface BookingPaymentSummary {
   total: number;
   deposit: number;
   balance: number;
+  selectedDate?: string;
+  selectedTime?: string;
+  durationMinutes?: number;
   discountPercent?: number;
   discountAmount?: number;
   discountedBalance?: number;
@@ -943,6 +946,48 @@ export function timeToMinutes(time: string): number {
 
   return h * 60 + m;
 }
+
+const EVENT_LOOKAHEAD_DAYS = 120;
+
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+export async function loadCalendarEvents(): Promise<void> {
+  try {
+    const today = new Date();
+    const from = formatDateKey(today);
+    const to = formatDateKey(addDays(today, EVENT_LOOKAHEAD_DAYS));
+    const res = await fetch(`/api/bookings?events=1&from=${from}&to=${to}`);
+    if (!res.ok) {
+      console.warn("Failed to load booking events");
+      return;
+    }
+    const data = await res.json();
+    if (Array.isArray(data?.events)) {
+      calendar.events = data.events
+        .filter((evt) => evt && typeof evt.date === "string")
+        .map((evt) => ({
+          date: evt.date,
+          start: Number(evt.start || 0),
+          end: Number(evt.end || 0),
+        }))
+        .filter((evt) => evt.date && Number.isFinite(evt.start) && Number.isFinite(evt.end));
+      renderCalendar();
+      if (calendar.selectedDate) {
+        renderTimeSlots();
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to load booking events", err);
+  }
+}
   
 export function renderTimeSlots() {
   const grid = $(".grid");
@@ -956,10 +1001,14 @@ export function renderTimeSlots() {
   const selectedDate = new Date(`${calendar.selectedDate}T00:00:00`);
   const month = selectedDate.getMonth(); // 0-based
   const isWeekend = selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
+  const isWeekdayRestricted = !isWeekend && !(month === 5 || month === 6); // weekdays outside June/July
   const showroomSelected = isShowroomDetailSelected();
-  const showroomLimited = showroomSelected && !isWeekend && !(month === 5 || month === 6); // limit on weekdays outside June/July
+  const showroomLimited = showroomSelected && isWeekdayRestricted; // limit on weekdays outside June/July
 
-  const slots = showroomLimited ? generateTimeSlots(8, 15, 30) : TIME_SLOTS;
+  let slots = showroomLimited ? generateTimeSlots(8, 15, 30) : TIME_SLOTS;
+  if (isWeekdayRestricted) {
+    slots = slots.filter((slot) => timeToMinutes(slot) > 14 * 60);
+  }
 
   const availableTimesLabel = $("#available-times-label");
   if (availableTimesLabel) {
@@ -977,26 +1026,23 @@ export function renderTimeSlots() {
   $("#selectedTime")?.setAttribute("value", "");
   $$(".time-slot").forEach((s) => s.classList.remove("is-selected", "selected"));
 
+  const { range } = getSelectedServiceInfo();
+  const serviceDuration = range.max;
+  const dayEvents = calendar.events.filter((e) => e.date === selectedDateObj);
+
   for (const t of slots) {
     const btn = document.createElement("div");
     btn.className = "time-slot";
     btn.textContent = t;
 
     const start = timeToMinutes(t);
-      const evt = calendar.events.find((e) => e.date === selectedDateObj);
-  
-      let disabled = false;
-  
-      if (evt) {
-        const overlap =
-          (start >= evt.start && start < evt.end) ||
-          (start + 30 > evt.start && start + 30 <= evt.end);
-        if (overlap) disabled = true;
-      }
-  
-      if (disabled) {
-        btn.classList.add("disabled");
-      }
+    const end = start + serviceDuration;
+
+    const blocked = dayEvents.some((evt) => start < evt.end && end > evt.start);
+
+    if (blocked) {
+      btn.classList.add("disabled");
+    }
   
     btn.addEventListener("click", () => {
       if (btn.classList.contains("disabled")) return;
@@ -1138,6 +1184,7 @@ export function getAdditionalInstructions(): string {
 export function getBookingPaymentSummary(): BookingPaymentSummary {
   const { pkgName, pkgPrice, addons, total } = getSelectedPackageAndAddons();
   const deposit = calculateDeposit(total);
+  const { range } = getSelectedServiceInfo();
   const address = getServiceAddressFields();
   const { firstName, lastName, email, phone } = getCustomerContact();
   const customerName = [firstName, lastName].filter(Boolean).join(" ").trim();
@@ -1155,6 +1202,9 @@ export function getBookingPaymentSummary(): BookingPaymentSummary {
     total,
     deposit,
     balance: Math.max(total - deposit, 0),
+    selectedDate: calendar.selectedDate || "",
+    selectedTime: calendar.selectedTime || "",
+    durationMinutes: range.max,
     dateTimeText: formatDateTimeForSummary(),
     vehicleLine: formatVehicleLine(),
     customerName,
@@ -1623,6 +1673,7 @@ export async function validateBookingForPayment(): Promise<boolean> {
   
     initLivePriceUpdates();
     initCalendarSystem();
+    void loadCalendarEvents();
     initContactInfoStep();
     const restored = restoreBookingFormState();
     const requestedStep = getStepFromUrlParam();

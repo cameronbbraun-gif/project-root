@@ -49,6 +49,54 @@ function splitName(fullName) {
   };
 }
 
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function parseDateParam(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function parseDateTimeText(value) {
+  if (!value || typeof value !== "string") return null;
+  const [datePart, timePart] = value.split(" at ");
+  if (!datePart || !timePart) return null;
+  const date = new Date(datePart);
+  if (Number.isNaN(date.getTime())) return null;
+  return { date: formatDateKey(date), time: timePart.trim() };
+}
+
+function timeToMinutes(time) {
+  if (!time || typeof time !== "string") return null;
+  const [raw, periodRaw] = time.trim().split(" ");
+  if (!raw || !periodRaw) return null;
+  const [hRaw, mRaw] = raw.split(":").map(Number);
+  if (!Number.isFinite(hRaw) || !Number.isFinite(mRaw)) return null;
+  let h = hRaw;
+  const period = periodRaw.toUpperCase();
+  if (period === "PM" && h !== 12) h += 12;
+  if (period === "AM" && h === 12) h = 0;
+  return h * 60 + mRaw;
+}
+
+function inferDurationMinutes(serviceName) {
+  const compact = String(serviceName || "").toLowerCase().replace(/\s+/g, "");
+  if (compact.includes("showroom")) return 300;
+  if (compact.includes("fullexterior")) return 180;
+  if (compact.includes("quickexterior")) return 120;
+  if (compact.includes("fullinterior")) return 180;
+  if (compact.includes("quickinterior")) return 120;
+  if (compact.includes("maintenance")) return 180;
+  return 180;
+}
+
 function logDebug(debug, label, data) {
   const entry = data !== undefined ? { label, data } : { label };
   debug.push(entry);
@@ -258,6 +306,85 @@ async function isPaymentSucceeded(paymentIntentId) {
   }
 }
 
+export async function GET(req) {
+  const origin = req.headers.get("origin") || "";
+  const headers = corsHeaders(origin);
+
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get("events") !== "1") {
+    return NextResponse.json(
+      { ok: false, error: "Unsupported request" },
+      { status: 400, headers }
+    );
+  }
+
+  const fromDate =
+    parseDateParam(searchParams.get("from")) || new Date();
+  const toDate =
+    parseDateParam(searchParams.get("to")) || new Date(fromDate.getTime() + 120 * 86400000);
+
+  const fromKey = formatDateKey(fromDate);
+  const toKey = formatDateKey(toDate);
+
+  try {
+    const db = await getDb();
+    const bookings = await db
+      .collection("bookings")
+      .find({
+        $or: [
+          { "schedule.date": { $gte: fromKey, $lte: toKey } },
+          {
+            "schedule.date": { $in: [null, ""] },
+            "schedule.dateTimeText": { $exists: true },
+          },
+        ],
+      })
+      .project({
+        schedule: 1,
+        service: 1,
+      })
+      .toArray();
+
+    const events = [];
+
+    bookings.forEach((booking) => {
+      const schedule = booking?.schedule || {};
+      let dateKey = schedule.date;
+      let time = schedule.time;
+
+      if (!dateKey || !time) {
+        const parsed = parseDateTimeText(schedule.dateTimeText);
+        if (parsed) {
+          dateKey = parsed.date;
+          time = parsed.time;
+        }
+      }
+
+      if (!dateKey || !time) return;
+      if (dateKey < fromKey || dateKey > toKey) return;
+
+      const start = timeToMinutes(time);
+      if (!Number.isFinite(start)) return;
+
+      let duration = Number(schedule.durationMinutes || 0);
+      if (!duration || duration <= 0) {
+        duration = inferDurationMinutes(booking?.service?.packageName);
+      }
+      const end = start + duration;
+
+      events.push({ date: dateKey, start, end });
+    });
+
+    return NextResponse.json({ ok: true, events }, { status: 200, headers });
+  } catch (err) {
+    console.error("[bookings] events fetch failed:", err);
+    return NextResponse.json(
+      { ok: false, error: "Unable to load booking events" },
+      { status: 500, headers }
+    );
+  }
+}
+
 export async function OPTIONS(req) {
   const origin = req.headers.get("origin") || "";
   return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
@@ -313,6 +440,9 @@ export async function POST(req) {
     },
     schedule: {
       dateTimeText: schedule.dateTimeText || "",
+      date: schedule.date || "",
+      time: schedule.time || "",
+      durationMinutes: schedule.durationMinutes ?? null,
     },
     pricing: {
       total: pricing.total ?? null,
