@@ -971,8 +971,13 @@ export async function loadCalendarEvents(): Promise<void> {
     }
     const data = await res.json();
     if (Array.isArray(data?.events)) {
-      calendar.events = data.events
-        .filter((evt) => evt && typeof evt.date === "string")
+      const rawEvents: Array<{ date?: unknown; start?: unknown; end?: unknown } | null | undefined> =
+        data.events;
+      calendar.events = rawEvents
+        .filter(
+          (evt): evt is { date: string; start?: unknown; end?: unknown } =>
+            Boolean(evt && typeof evt.date === "string")
+        )
         .map((evt) => ({
           date: evt.date,
           start: Number(evt.start || 0),
