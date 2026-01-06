@@ -899,7 +899,7 @@ export default function BookingPage() {
           <h5 className="heading-13">Tell us how to reach you</h5>
 
           <div className="w-layout-vflex flex-block-339 contact-form-card">
-            <div className="w-layout-hflex flex-block-340">
+            <div className="w-layout-hflex flex-block-340 contact-row contact-row-stack">
               <div className="w-layout-vflex flex-block-341">
                 <label htmlFor="first-name" className="field-label-2">
                   First Name *
@@ -929,7 +929,7 @@ export default function BookingPage() {
               </div>
             </div>
 
-            <div className="w-layout-hflex flex-block-340">
+            <div className="w-layout-hflex flex-block-340 contact-row contact-row-stack">
               <div className="w-layout-vflex flex-block-341">
                 <label htmlFor="phone-number" className="field-label-2">
                   Phone Number *
@@ -975,8 +975,8 @@ export default function BookingPage() {
               />
             </div>
 
-            <div className="w-layout-hflex flex-block-340">
-              <div className="w-layout-vflex flex-block-341">
+            <div className="w-layout-hflex flex-block-340 contact-row contact-row-location">
+              <div className="w-layout-vflex flex-block-341 field-city">
                 <label htmlFor="city" className="field-label-2">
                   City *
                 </label>
@@ -990,7 +990,7 @@ export default function BookingPage() {
                 />
               </div>
 
-              <div className="w-layout-vflex flex-block-341">
+              <div className="w-layout-vflex flex-block-341 field-state">
                 <label htmlFor="state" className="field-label-2">
                   State *
                 </label>
@@ -1004,7 +1004,7 @@ export default function BookingPage() {
                 />
               </div>
 
-              <div className="w-layout-vflex flex-block-341">
+              <div className="w-layout-vflex flex-block-341 field-zip">
                 <label htmlFor="zip-code" className="field-label-2">
                   ZIP Code *
                 </label>

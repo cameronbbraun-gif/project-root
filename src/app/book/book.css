@@ -990,14 +990,52 @@
   }
 
   .payment-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
   }
 
   .payment-actions .back-button,
   .payment-actions .button-primary-7 {
-    width: 100%;
+    width: auto;
     justify-content: center;
     text-align: center;
+  }
+
+  #step-5 .payment-actions .back-button {
+    padding: 10px 16px;
+  }
+
+  #step-5 .payment-actions .button-primary-7 {
+    padding: 10px 16px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  #step-5 .payment-actions .nexttext {
+    font-size: 14px;
+  }
+
+  #step-5 .payment-actions .nextarrow {
+    margin-left: 4px;
+  }
+
+  #step-4 .contact-row-stack {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #step-4 .contact-row-location {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  #step-4 .contact-row-location > .field-city {
+    flex: 1 1 100%;
+  }
+
+  #step-4 .contact-row-location > .field-state,
+  #step-4 .contact-row-location > .field-zip {
+    flex: 1 1 calc(50% - 8px);
   }
 }
