@@ -4,6 +4,7 @@
 
 import React from "react";
 import Head from "next/head";
+import Link from "next/link";
 
 export default function BookingError() {
   return (
@@ -54,7 +55,7 @@ export default function BookingError() {
           >
             <div className="container-23">
               <div className="navbar-wrapper-4">
-                <a href="#" className="navbar-brand-5 w-nav-brand">
+                <Link href="/" className="navbar-brand-5 w-nav-brand">
                   <img
                     src="../images/favicon.png"
                     loading="lazy"
@@ -74,27 +75,27 @@ export default function BookingError() {
                     className="image-13"
                   />
                   <h1 className="heading-3">Detail Geeks</h1>
-                </a>
+                </Link>
 
                 <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                   <ul className="nav-menu-two-3 w-list-unstyled">
                     <li>
-                      <a href="../index.html" className="nav-link-4">
+                      <a href="/" className="nav-link-4">
                         Home
                       </a>
                     </li>
                     <li className="list-item">
-                      <a href="about-us.html" className="nav-link-4">
+                      <a href="/about-us" className="nav-link-4">
                         About Us
                       </a>
                     </li>
                     <li>
-                      <a href="pricing.html" className="nav-link-4">
+                      <a href="/pricing" className="nav-link-4">
                         Pricing
                       </a>
                     </li>
                     <li>
-                      <a href="contact.html" className="nav-link-4">
+                      <a href="/contact" className="nav-link-4">
                         Contact
                       </a>
                     </li>
@@ -102,12 +103,12 @@ export default function BookingError() {
                       <div className="nav-divider-3"></div>
                     </li>
                     <li className="mobile-margin-top-14">
-                      <a href="get-a-quote.html" className="button-primary-8 w-button">
+                      <a href="/get-a-quote" className="button-primary-8 w-button">
                         Get a Quote
                       </a>
                     </li>
                     <li className="mobile-margin-top-14">
-                      <a href="book.html" className="button-primary-7 w-button">
+                      <a href="/book" className="button-primary-7 w-button">
                         Book Now
                       </a>
                     </li>
@@ -224,7 +225,7 @@ export default function BookingError() {
           <div className="w-layout-vflex flex-block-375">
             <div className="text-block-37">Need Help?</div>
             <div className="w-layout-vflex button-wrapper-6">
-              <a href="contact.html" className="button-6 w-button">
+              <a href="/contact" className="button-6 w-button">
                 Contact Us
               </a>
               <div className="w-layout-hflex flex-block-382">
@@ -238,10 +239,10 @@ export default function BookingError() {
             <a href="#" className="button-8 w-button">
               Download Receipt
             </a>
-            <div className="w-layout-hflex flex-block-382">
+            <Link href="/book?step=5" className="w-layout-hflex flex-block-382 back-to-checkout-link">
               <img src="../images/back2.svg" loading="lazy" alt="" />
               <div className="text-block-40">Back to Checkout</div>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -433,12 +434,12 @@ export default function BookingError() {
 
               <div className="title-style">
                 <div className="text-61">
-                  <a href="privacy-policy.html" className="link-11">
+                  <a href="/privacy-policy" className="link-11">
                     Privacy Policy
                   </a>
                 </div>
                 <div className="text-61">
-                  <a href="terms-of-service.html" className="link-12">
+                  <a href="/terms-of-service" className="link-12">
                     Terms of Service
                   </a>
                 </div>
@@ -452,6 +453,17 @@ export default function BookingError() {
           </div>
         </div>
       </body>
+      <style jsx>{`
+        :global(.button-6) {
+          transition: none;
+        }
+        :global(.back-to-checkout-link) {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 14px;
+        }
+      `}</style>
     </>
   );
 }

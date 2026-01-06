@@ -77,27 +77,31 @@ export default function TermsOfServicePage() {
 
       <div className="div-block-27" />
 
-      <div className="hero-heading-left-11">
+      <div
+        className="hero-heading-left-11"
+        style={{ height: "auto", overflow: "visible" }}
+      >
         <div className="container-26">
-          <div className="w-layout-vflex flex-block-11">
-            <div className="w-layout-vflex">
-              <h2 className="heading-5">
-                Detail Geeks Terms of Service.
-                <br />
-              </h2>
-              <p className="paragraph">Last updated: 6/4/25</p>
-            </div>
+          <div className="terms-layout">
+            <div className="terms-main">
+              <div className="terms-header w-layout-vflex">
+                <h2 className="heading-5">
+                  Detail Geeks Terms of Service.
+                  <br />
+                </h2>
+                <p className="paragraph">Last updated: 6/4/25</p>
+              </div>
 
-            <div className="w-layout-hflex flex-block-12">
-              <div className="column-21">
+              <div className="terms-content w-layout-hflex flex-block-12">
                 <div className="column-21">
-                  {/* Overview */}
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">
-                      Overview
-                      <br />
-                    </h3>
-                    <p className="paragraph">
+                  <div className="column-21">
+                    {/* Overview */}
+                    <div className="w-layout-vflex">
+                      <h3 id="overview" className="heading-4">
+                        Overview
+                        <br />
+                      </h3>
+                      <p className="paragraph">
                       This website is operated by Detail Geeks. Throughout the
                       site, the terms “we”, “us” and “our” refer to Detail
                       Geeks. Detail Geeks offers this website, including all
@@ -143,7 +147,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 1 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-1" className="heading-4">
                       Section 1 - Online Store Terms
                       <br />
                     </h3>
@@ -176,7 +180,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 2 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-2" className="heading-4">
                       Section 2 - General Conditions
                       <br />
                     </h3>
@@ -211,7 +215,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 3 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-3" className="heading-4">
                       Section 3 - Accuracy, Completeness and Timeliness of
                       Information
                       <br />
@@ -242,7 +246,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 4 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-4" className="heading-4">
                       Section 4 - Modifications to the Service and Prices
                       <br />
                     </h3>
@@ -266,7 +270,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 5 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-5" className="heading-4">
                       Section 5 - Products or Services
                       <br />
                     </h3>
@@ -303,7 +307,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 6 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-6" className="heading-4">
                       Section 6 - Accuracy of Billing and Account Information
                       <br />
                     </h3>
@@ -331,7 +335,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 7 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-7" className="heading-4">
                       Section 7 - Optional Tools
                       <br />
                     </h3>
@@ -366,7 +370,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 8 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-8" className="heading-4">
                       Section 8 - Third-Party Links
                       <br />
                     </h3>
@@ -402,7 +406,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 9 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-9" className="heading-4">
                       Section 9 - User Comments, Feedback and Other Submissions
                       <br />
                     </h3>
@@ -443,7 +447,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 10 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-10" className="heading-4">
                       Section 10 - Personal Information
                       <br />
                     </h3>
@@ -459,7 +463,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 11 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-11" className="heading-4">
                       Section 11 - Errors, Inaccuracies and Omissions
                       <br />
                     </h3>
@@ -489,7 +493,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 12 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-12" className="heading-4">
                       Section 12 - Prohibited Uses
                       <br />
                     </h3>
@@ -525,7 +529,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 13 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-13" className="heading-4">
                       Section 13 - Disclaimer of Warranties; Limitation of
                       Liability
                       <br />
@@ -588,7 +592,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 14 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-14" className="heading-4">
                       Section 14 - Indemnification
                       <br />
                     </h3>
@@ -607,7 +611,7 @@ export default function TermsOfServicePage() {
 
                   {/* Section 15 */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="section-15" className="heading-4">
                       Section 15 - Severability
                       <br />
                     </h3>
@@ -624,7 +628,7 @@ export default function TermsOfServicePage() {
 
                   {/* Contact Us */}
                   <div className="w-layout-vflex">
-                    <h3 className="heading-4">
+                    <h3 id="contact-us" className="heading-4">
                       Contact Us
                       <br />
                     </h3>
@@ -642,104 +646,105 @@ export default function TermsOfServicePage() {
                   </div>
                 </div>
               </div>
-
-              {/* TOC */}
-              <div className="toc">
-                <div className="text-108">Table of Contents:</div>
-                <div className="w-layout-vflex">
-                  <ul role="list" className="list-2">
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Overview
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Online Store Terms
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        General Conditions
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Accuracy, Completeness and Timeliness of Information
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Modifications to the Service and Prices
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Products or Services
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Accuracy of Billing and Account Information
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Optional Tools
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Third-Party Links
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        User Comments, Feedback and Other Submissions
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Personal Information
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Errors, Inaccuracies and Omissions
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Prohibited Uses
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Disclaimer of Warranties; Limitation of Liability
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Indemnification
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Severability
-                      </a>
-                    </li>
-                    <li className="list-item-2">
-                      <a href="#" className="link-17">
-                        Contact Us
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              {/* end TOC */}
             </div>
           </div>
+
+          {/* TOC */}
+          <div className="toc">
+            <div className="text-108">Table of Contents:</div>
+            <div className="w-layout-vflex">
+              <ul role="list" className="list-2">
+                <li className="list-item-2">
+                  <a href="#overview" className="link-17">
+                    Overview
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-1" className="link-17">
+                    Online Store Terms
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-2" className="link-17">
+                    General Conditions
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-3" className="link-17">
+                    Accuracy, Completeness and Timeliness of Information
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-4" className="link-17">
+                    Modifications to the Service and Prices
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-5" className="link-17">
+                    Products or Services
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-6" className="link-17">
+                    Accuracy of Billing and Account Information
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-7" className="link-17">
+                    Optional Tools
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-8" className="link-17">
+                    Third-Party Links
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-9" className="link-17">
+                    User Comments, Feedback and Other Submissions
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-10" className="link-17">
+                    Personal Information
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-11" className="link-17">
+                    Errors, Inaccuracies and Omissions
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-12" className="link-17">
+                    Prohibited Uses
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-13" className="link-17">
+                    Disclaimer of Warranties; Limitation of Liability
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-14" className="link-17">
+                    Indemnification
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#section-15" className="link-17">
+                    Severability
+                  </a>
+                </li>
+                <li className="list-item-2">
+                  <a href="#contact-us" className="link-17">
+                    Contact Us
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          {/* end TOC */}
         </div>
+      </div>
       </div>
 
       {/* Footer */}
@@ -957,6 +962,62 @@ export default function TermsOfServicePage() {
           </div>
         </div>
       </div>
+      <style jsx global>{`
+        .terms-layout {
+          display: flex;
+          align-items: flex-start;
+          gap: 48px;
+        }
+
+        .terms-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .terms-header {
+          margin-bottom: 24px;
+        }
+
+        .terms-content {
+          align-items: flex-start;
+        }
+
+        .terms-content .column-21 {
+          width: 100%;
+        }
+
+        .terms-content .w-layout-vflex {
+          margin-bottom: 20px;
+        }
+
+        .terms-content .paragraph {
+          line-height: 1.7;
+          margin-bottom: 16px;
+        }
+
+        .terms-content .heading-4 {
+          scroll-margin-top: 120px;
+        }
+
+        .hero-heading-left-11 {
+          height: auto;
+          overflow: visible;
+        }
+
+        .toc {
+          margin-top: 0;
+        }
+
+        @media (max-width: 991px) {
+          .terms-layout {
+            flex-direction: column;
+          }
+
+          .toc {
+            width: 100%;
+          }
+        }
+      `}</style>
     </>
   );
 }

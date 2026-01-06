@@ -22,7 +22,7 @@ export default function GetAQuotePage() {
         >
           <div className="container-23">
             <div className="navbar-wrapper-4">
-              <a href="#" className="navbar-brand-5 w-nav-brand">
+              <Link href="/" className="navbar-brand-5 w-nav-brand">
                 <img
                   src="/images/logo.png"
                   loading="lazy"
@@ -32,7 +32,7 @@ export default function GetAQuotePage() {
                   className="image-13"
                 />
                 <h1 className="heading-3">Detail Geeks</h1>
-              </a>
+              </Link>
               <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                 <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                   <li>

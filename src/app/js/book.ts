@@ -1321,14 +1321,14 @@
       if (termsDepositText) {
         if (deposit > 0) {
           termsDepositText.innerHTML =
-            `I agree to the <a href="terms-of-service.html" class="link-19">Terms of Service</a> and ` +
-            `<a href="privacy-policy.html" class="link-20">Privacy Policy</a>. ` +
+            `I agree to the <a href="/terms-of-service" class="link-19">Terms of Service</a> and ` +
+            `<a href="/privacy-policy" class="link-20">Privacy Policy</a>. ` +
             `I understand that a $${deposit} deposit is required to secure my booking and the remaining balance ` +
             `of $${remaining} will be collected on service day.`;
         } else {
           termsDepositText.innerHTML =
-            `I agree to the <a href="terms-of-service.html" class="link-19">Terms of Service</a> and ` +
-            `<a href="privacy-policy.html" class="link-20">Privacy Policy</a>.`;
+            `I agree to the <a href="/terms-of-service" class="link-19">Terms of Service</a> and ` +
+            `<a href="/privacy-policy" class="link-20">Privacy Policy</a>.`;
         }
       }
 
@@ -1372,47 +1372,50 @@
   
   })();
 document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("card-element")) {
-    setupStripe();
+  const legacyCardElement = document.getElementById("card-element");
+  if (!legacyCardElement) {
+    return;
   }
-});
 
-  document.addEventListener("click", async (e) => {
-    const btn = e.target.closest("[data-next]");
+  setupStripe();
+
+  const handleLegacySubmit = async (e: Event) => {
+    const btn = (e.target as HTMLElement | null)?.closest("[data-next]");
     if (!btn) return;
 
-    const step = btn.closest(".form-step")?.dataset.step;
+    const step = btn.closest(".form-step")?.getAttribute("data-step");
+    if (step !== "5") return;
 
-    if (step === "5") {
-      e.preventDefault();
+    e.preventDefault();
 
-      const nextButton = btn;
-      nextButton.classList.add("is-loading");
-      nextButton.style.pointerEvents = "none";
+    const nextButton = btn as HTMLElement;
+    nextButton.classList.add("is-loading");
+    (nextButton as HTMLElement).style.pointerEvents = "none";
 
-      const loader = document.createElement("div");
-      loader.id = "payment-loader";
-      loader.style.width = "24px";
-      loader.style.height = "24px";
-      loader.style.border = "3px solid #ffffff";
-      loader.style.borderTopColor = "transparent";
-      loader.style.borderRadius = "50%";
-      loader.style.marginLeft = "10px";
-      loader.style.animation = "spin 0.8s linear infinite";
-      nextButton.appendChild(loader);
+    const loader = document.createElement("div");
+    loader.id = "payment-loader";
+    loader.style.width = "24px";
+    loader.style.height = "24px";
+    loader.style.border = "3px solid #ffffff";
+    loader.style.borderTopColor = "transparent";
+    loader.style.borderRadius = "50%";
+    loader.style.marginLeft = "10px";
+    loader.style.animation = "spin 0.8s linear infinite";
+    nextButton.appendChild(loader);
 
-      const depositText = document.getElementById("deposit-amount").textContent; // "$20"
-      const deposit = Number(depositText.replace(/[^0-9]/g, "")); // 20
-      const amountInCents = deposit * 100;
+    const depositText = document.getElementById("deposit-amount")?.textContent ?? "";
+    const deposit = Number(depositText.replace(/[^0-9]/g, ""));
+    const amountInCents = deposit * 100;
 
+    try {
       const res = await fetch("https://detailgeeksautospa.com/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: amountInCents,
           description: "Detail Geeks Booking Deposit",
-          email: document.getElementById("email")?.value || ""
-        })
+          email: (document.getElementById("email") as HTMLInputElement | null)?.value || "",
+        }),
       });
 
       const data = await res.json();
@@ -1427,18 +1430,16 @@ document.addEventListener("DOMContentLoaded", () => {
         payment_method: {
           card: cardElement,
           billing_details: {
-            name: document.getElementById("cardholder-name").value,
-            email: document.getElementById("email")?.value || ""
-          }
-        }
+            name: (document.getElementById("cardholder-name") as HTMLInputElement | null)?.value || "",
+            email: (document.getElementById("email") as HTMLInputElement | null)?.value || "",
+          },
+        },
       });
 
       if (error) {
-        window.location.href = "/booking-error.html";
+        window.location.href = "/book/booking-error";
         return;
       }
-
-      console.log("Payment successful:", paymentIntent.id);
 
       fetch("https://detailgeeksautospa.com/api/payment-confirmation", {
         method: "POST",
@@ -1446,20 +1447,27 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           paymentId: paymentIntent.id,
           amount: amountInCents,
-        })
+        }),
       });
 
-      window.location.href = "/booking-success.html";
-      return;
+      window.location.href = "/book/booking-success";
+    } finally {
+      nextButton.classList.remove("is-loading");
+      (nextButton as HTMLElement).style.pointerEvents = "";
+      loader.remove();
     }
-  });
-const spinnerStyle = document.createElement("style");
-spinnerStyle.textContent = `
-  @keyframes spin { 
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .is-loading { opacity: 0.7; }
-`;
-document.head.appendChild(spinnerStyle);
+  };
+
+  document.addEventListener("click", handleLegacySubmit);
+
+  const spinnerStyle = document.createElement("style");
+  spinnerStyle.textContent = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .is-loading { opacity: 0.7; }
+  `;
+  document.head.appendChild(spinnerStyle);
+});
 })();

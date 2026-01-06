@@ -168,7 +168,7 @@ export default function ContactEmail({
 
           {/* Body */}
           <div style={body}>
-            <h1 style={h1}>We received your message ✅</h1>
+            <h1 style={h1}>We received your message</h1>
             <p style={lead}>
               Hi {firstName}, thanks for reaching out — we received your message
               and will reply soon. A copy is included below for you.

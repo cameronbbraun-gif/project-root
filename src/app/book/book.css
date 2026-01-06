@@ -675,6 +675,88 @@
   background: #e5e7eb;
 }
 
+.cost-line--discount {
+  color: #991b1b;
+}
+
+.cost-line--total {
+  font-weight: 600;
+}
+
+.cost-line--total .cost-line-label,
+.cost-line--total .cost-line-value {
+  font-weight: 600;
+}
+
+.promo-code-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.promo-code-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.promo-code-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.promo-code-input {
+  flex: 1 1 200px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #f9fafb;
+}
+
+.promo-code-input:disabled {
+  opacity: 0.7;
+}
+
+.promo-code-button {
+  background: #1d3753;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.promo-code-button--ghost {
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+
+.promo-code-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.promo-code-message {
+  font-size: 13px;
+}
+
+.promo-code-message.is-error {
+  color: #991b1b;
+}
+
+.promo-code-message.is-success {
+  color: #166534;
+}
+
 /* Terms checkbox */
 
 #terms-agree {
@@ -865,6 +947,15 @@
   background: #fef2f2;
   border: 1px solid #fecdd3;
   color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.payment-success {
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #166534;
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;

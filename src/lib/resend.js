@@ -1,27 +1,10 @@
 import { Resend } from "resend";
 
-// Lazy singleton so we don't throw at import time
-let _resend;
-export function getResend() {
-  if (!_resend) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not set in environment");
-    }
-    _resend = new Resend(apiKey);
-  }
-  return _resend;
-}
+export const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Export a proxy named `resend` so existing code can do `resend.emails.send(...)`
-// without initializing until first use.
-export const resend = new Proxy({}, {
-  get(_target, prop) {
-    const inst = getResend();
-    const val = inst[prop];
-    return typeof val === 'function' ? val.bind(inst) : val;
-  }
-});
+export function getResend() {
+  return resend;
+}
 
 export async function sendMailWithResend({ to, subject, html, from, replyTo }) {
   const client = getResend();

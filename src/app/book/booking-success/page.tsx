@@ -1,9 +1,182 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Script from "next/script";
+import { readLatestBooking } from "../book";
+import { InvoiceData, renderInvoiceHtml } from "@/app/template/invoice";
+
+interface DisplayBooking {
+  reference: string;
+  packageName: string;
+  packagePrice: number;
+  addons: string[];
+  addonPrices?: Record<string, number>;
+  addonDetails?: { name: string; price: number }[];
+  dateLabel: string;
+  timeLabel: string;
+  serviceAddress: string;
+  vehicleLine: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  serviceTotal: number;
+  deposit: number;
+  balance: number;
+  discountPercent?: number;
+  discountAmount: number;
+  discountedBalance: number;
+  promotionCode?: string;
+  totalAfterDiscount: number;
+  total: number;
+}
+
+const formatMoney = (n: number) => `$${n.toFixed(2)}`;
 
 export default function BookingSuccess() {
+  const [booking, setBooking] = useState<DisplayBooking | null>(null);
+
+  useEffect(() => {
+    const latest = readLatestBooking();
+    if (latest?.summary) {
+      const { summary, reference } = latest;
+      const [dateLabel = summary.dateTimeText, timeLabel = ""] =
+        summary.dateTimeText.split(" at ");
+      const address = [
+        summary.serviceAddress.street,
+        summary.serviceAddress.city,
+        summary.serviceAddress.state,
+        summary.serviceAddress.zip,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      const addonDetails =
+        summary.addonDetails && summary.addonDetails.length
+          ? summary.addonDetails
+          : summary.addons.map((name) => ({
+              name,
+              price: Number(summary.addonPrices?.[name] || 0),
+            }));
+      const addonsTotal = addonDetails.reduce((sum, a) => sum + Number(a.price || 0), 0);
+      const totalAmount =
+        Number(summary.total || 0) || Number(summary.deposit || 0) + Number(summary.balance || 0);
+      const packagePrice =
+        Number(summary.packagePrice || 0) || Math.max(0, totalAmount - addonsTotal);
+      const discountAmount = Number(summary.discountAmount || 0);
+      const discountedBalance =
+        summary.discountedBalance != null
+          ? Number(summary.discountedBalance)
+          : discountAmount > 0
+            ? Math.max(summary.balance - discountAmount, 0)
+            : summary.balance;
+      const totalAfterDiscount = Number(summary.deposit || 0) + discountedBalance;
+
+      setBooking({
+        reference,
+        packageName: summary.packageName || "Booking",
+        packagePrice,
+        addons: summary.addons,
+        addonPrices: summary.addonPrices,
+        addonDetails,
+        dateLabel: dateLabel || summary.dateTimeText,
+        timeLabel: timeLabel || "",
+        serviceAddress: address || "Service address provided",
+        vehicleLine: summary.vehicleLine || "Vehicle details provided",
+        customerName: summary.customerName || "Customer",
+        email: summary.email || "Email provided",
+        phone: summary.phone || "Phone provided",
+        serviceTotal: totalAmount,
+        deposit: summary.deposit,
+        balance: summary.balance,
+        discountPercent: summary.discountPercent,
+        discountAmount,
+        discountedBalance,
+        promotionCode: summary.promotionCode,
+        totalAfterDiscount,
+        total: totalAmount,
+      });
+    }
+  }, []);
+
+  const addonsContent = useMemo(() => {
+    if (!booking) return null;
+    if (!booking.addons.length) {
+      return <li>No add-ons selected</li>;
+    }
+    return booking.addons.map((addon, idx) => <li key={idx}>{addon}</li>);
+  }, [booking]);
+
+  const handleDownloadReceipt = () => {
+    if (!booking) {
+      alert("Receipt is not ready yet. Please try again in a moment.");
+      return;
+    }
+    const today = new Date();
+    const issueDate = today.toLocaleDateString();
+    const addonLines =
+      booking.addonDetails && booking.addonDetails.length
+        ? booking.addonDetails.map((a) => ({
+            description: a.name,
+            amount: Number(a.price || 0),
+          }))
+        : booking.addons.map((addon) => ({
+            description: addon,
+            amount: Number(booking.addonPrices?.[addon] || 0),
+          }));
+
+    const addonsTotal = addonLines.reduce((sum, a) => sum + (a.amount || 0), 0);
+    const packageAmountRaw = Number(booking.packagePrice || 0);
+    const totalAmount = Number(booking.total || 0) || Number(booking.deposit || 0) + Number(booking.balance || 0);
+    const computedPackageAmount =
+      packageAmountRaw > 0 ? packageAmountRaw : Math.max(0, totalAmount - addonsTotal);
+    const discountAmount = Number(booking.discountAmount || 0);
+    const discountedBalance =
+      booking.discountedBalance != null
+        ? Number(booking.discountedBalance)
+        : discountAmount > 0
+          ? Math.max(booking.balance - discountAmount, 0)
+          : booking.balance;
+
+    const data: InvoiceData = {
+      reference: booking.reference,
+      issueDate,
+      serviceDate: booking.dateLabel,
+      customerName: booking.customerName,
+      customerEmail: booking.email,
+      customerPhone: booking.phone,
+      serviceAddress: booking.serviceAddress,
+      deposit: booking.deposit,
+      balance: booking.balance,
+      total: totalAmount,
+      discountAmount,
+      discountPercent: booking.discountPercent,
+      discountedBalance,
+      promotionCode: booking.promotionCode,
+      items: [{ description: booking.packageName, amount: computedPackageAmount }, ...addonLines],
+      addonPrices: booking.addonPrices,
+    };
+
+    const html = renderInvoiceHtml(data);
+    const fileName = `invoice-${issueDate.replace(/\//g, "-")}`;
+    const printableHtml = html.replace(/<title>[^<]*<\/title>/i, `<title>${fileName}</title>`);
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.srcdoc = printableHtml;
+
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => iframe.remove(), 500);
+      }
+    };
+
+    document.body.appendChild(iframe);
+  };
+
   return (
     <html
       data-wf-page="6894d33fde9ebc41460da8a9"
@@ -82,7 +255,7 @@ export default function BookingSuccess() {
           >
             <div className="container-23">
               <div className="navbar-wrapper-4">
-                <a href="#" className="navbar-brand-5 w-nav-brand">
+                <Link href="/" className="navbar-brand-5 w-nav-brand">
                   <img
                     src="../images/favicon.png"
                     loading="lazy"
@@ -102,7 +275,7 @@ export default function BookingSuccess() {
                     className="image-13"
                   />
                   <h1 className="heading-3">Detail Geeks</h1>
-                </a>
+                </Link>
 
                 <nav
                   role="navigation"
@@ -110,22 +283,22 @@ export default function BookingSuccess() {
                 >
                   <ul role="list" className="nav-menu-two-3 w-list-unstyled">
                     <li>
-                      <a href="../index.html" className="nav-link-4">
+                      <a href="/" className="nav-link-4">
                         Home
                       </a>
                     </li>
                     <li className="list-item">
-                      <a href="about-us.html" className="nav-link-4">
+                      <a href="/about-us" className="nav-link-4">
                         About Us
                       </a>
                     </li>
                     <li>
-                      <a href="pricing.html" className="nav-link-4">
+                      <a href="/pricing" className="nav-link-4">
                         Pricing
                       </a>
                     </li>
                     <li>
-                      <a href="contact.html" className="nav-link-4">
+                      <a href="/contact" className="nav-link-4">
                         Contact
                       </a>
                     </li>
@@ -133,12 +306,12 @@ export default function BookingSuccess() {
                       <div className="nav-divider-3"></div>
                     </li>
                     <li className="mobile-margin-top-14">
-                      <a href="get-a-quote.html" className="button-primary-8 w-button">
+                      <a href="/get-a-quote" className="button-primary-8 w-button">
                         Get a Quote
                       </a>
                     </li>
                     <li className="mobile-margin-top-14">
-                      <a href="book.html" className="button-primary-7 w-button">
+                      <a href="/book" className="button-primary-7 w-button">
                         Book Now
                       </a>
                     </li>
@@ -184,17 +357,23 @@ export default function BookingSuccess() {
                 <div className="w-layout-vflex flex-block-367">
                   <div className="w-layout-vflex flex-block-368">
                     <h6 id="service-package" className="service-package">
-                      Premium Full Detail
+                      {booking?.packageName || "Booking"}
                     </h6>
                     <div id="service-description" className="service-description">
-                      Complete interior &amp; exterior detailing
+                      {booking?.packageName
+                        ? `${booking.packageName} deposit confirmed`
+                        : "Your booking is confirmed"}
                     </div>
                   </div>
 
                   <ul id="service-addons" role="list" className="service-addons">
-                    <li id="add-on-1">Pet Hair Removal</li>
-                    <li id="add-on-2">Fabric Protection</li>
-                    <li id="add-on-3">Iron Decontamination</li>
+                    {addonsContent || (
+                      <>
+                        <li id="add-on-1">Pet Hair Removal</li>
+                        <li id="add-on-2">Fabric Protection</li>
+                        <li id="add-on-3">Iron Decontamination</li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -204,10 +383,10 @@ export default function BookingSuccess() {
                 <img src="../images/calendar-2.svg" className="image-27" alt="" />
                 <div className="w-layout-vflex">
                   <h6 id="booking-date" className="booking-date">
-                    January 15, 2025
+                    {booking?.dateLabel || "Date confirmed"}
                   </h6>
                   <div id="booking-time" className="booking-time">
-                    Tuesday at 9:00 AM - 1:00 PM (4 hours)
+                    {booking?.timeLabel || "Time confirmed"}
                   </div>
                 </div>
               </div>
@@ -218,7 +397,7 @@ export default function BookingSuccess() {
                 <div className="w-layout-vflex">
                   <h6 className="service-location-title">Service Location</h6>
                   <div id="booking-location" className="booking-location">
-                    123 Main Street Los Angeles, CA 90210
+                    {booking?.serviceAddress || "Service address provided"}
                   </div>
                 </div>
               </div>
@@ -228,10 +407,10 @@ export default function BookingSuccess() {
                 <img src="../images/car-2.svg" className="image-29" alt="" />
                 <div className="w-layout-vflex">
                   <h6 id="vehicle-type" className="vehicle-type">
-                    Vehicle (Sedan)
+                    Vehicle Info
                   </h6>
                   <div id="vehicle-model" className="vehicle-model">
-                    2022 Honda Accord
+                    {booking?.vehicleLine || "Vehicle details provided"}
                   </div>
                 </div>
               </div>
@@ -242,9 +421,9 @@ export default function BookingSuccess() {
                 <div className="w-layout-vflex">
                   <h6 className="booking-date">Customer</h6>
                   <ul role="list" className="list-4 w-list-unstyled">
-                    <li>John Smith</li>
-                    <li>john.smith@email.com</li>
-                    <li>(555) 123-4567</li>
+                    <li>{booking?.customerName || "Customer"}</li>
+                    <li>{booking?.email || "Email provided"}</li>
+                    <li>{booking?.phone || "Phone provided"}</li>
                   </ul>
                 </div>
               </div>
@@ -258,20 +437,41 @@ export default function BookingSuccess() {
                 <div className="w-layout-hflex booking-total-wrapper">
                   <div className="booking-summary">Service Total:</div>
                   <div id="service-total" className="service-total">
-                    $302.00
+                    {booking ? formatMoney(booking.serviceTotal) : "$0.00"}
                   </div>
                 </div>
 
                 <div className="w-layout-hflex booking-total-wrapper">
                   <div className="booking-summary">Deposit Paid:</div>
-                  <div id="deposit-total" className="deposit-paid">$50.00</div>
+                  <div id="deposit-total" className="deposit-paid">
+                    {booking ? formatMoney(booking.deposit) : "$0.00"}
+                  </div>
                 </div>
+
+                {booking && booking.discountAmount > 0 ? (
+                  <div className="w-layout-hflex booking-total-wrapper booking-total-wrapper--discount">
+                    <div className="booking-summary">
+                      Discount{booking.promotionCode ? ` (${booking.promotionCode}` : ""}{booking.discountPercent ? ` ${booking.discountPercent}%` : ""}{booking.promotionCode ? ")" : ""}:
+                    </div>
+                    <div className="service-total">
+                      - {formatMoney(booking.discountAmount)}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="w-layout-hflex flex-block-372">
-                <div className="booking-summary">Balance Due on Service Day:</div>
+                <div className="booking-summary">
+                  {booking && booking.discountAmount > 0
+                    ? "New Balance Due on Service Day:"
+                    : "Balance Due on Service Day:"}
+                </div>
                 <div id="service-total" className="service-total">
-                  $252.00
+                  {booking
+                    ? formatMoney(
+                        booking.discountAmount > 0 ? booking.discountedBalance : booking.balance
+                      )
+                    : "$0.00"}
                 </div>
               </div>
             </div>
@@ -281,7 +481,7 @@ export default function BookingSuccess() {
               <div className="w-layout-vflex flex-block-374">
                 <div className="text-block-36">Booking Reference</div>
                 <div id="booking-reference" className="booking-reference">
-                  #DG-2025-0115
+                  {booking?.reference || "Generating reference..."}
                 </div>
               </div>
 
@@ -351,8 +551,11 @@ export default function BookingSuccess() {
               <div className="w-layout-hflex flex-block-381">
                 <img src="../images/card.svg" alt="" />
                 <div id="service-cost" className="service-cost">
-                  Remaining balance of $252 can be paid by cash, card, or digital
-                  payment on service day
+                  {booking
+                    ? `Remaining balance of ${formatMoney(
+                        booking.discountAmount > 0 ? booking.discountedBalance : booking.balance
+                      )} can be paid by cash, card, or digital payment on service day`
+                    : "Remaining balance can be paid by cash, card, or digital payment on service day"}
                 </div>
               </div>
             </div>
@@ -363,7 +566,7 @@ export default function BookingSuccess() {
             <div className="text-block-37">Need Help?</div>
 
             <div className="w-layout-vflex button-wrapper-6">
-              <a href="contact.html" className="button-6 w-button">
+              <a href="/contact" className="button-6 w-button">
                 Contact Us
               </a>
 
@@ -376,11 +579,11 @@ export default function BookingSuccess() {
 
           {/* DOWNLOAD RECEIPT */}
           <div className="w-layout-vflex button-wrapper-7">
-            <a href="#" className="button-7 w-button">
+            <button type="button" className="button-7 w-button" onClick={handleDownloadReceipt}>
               Download Receipt
-            </a>
+            </button>
 
-            <div className="w-layout-hflex flex-block-382">
+            <div className="w-layout-hflex flex-block-382" onClick={handleDownloadReceipt} role="button" tabIndex={0}>
               <img src="../images/download2.svg" width="17" alt="" />
               <div className="text-block-40">Download Receipt</div>
             </div>

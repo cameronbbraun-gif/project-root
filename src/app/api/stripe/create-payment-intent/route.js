@@ -23,8 +23,19 @@ export async function OPTIONS(req) {
   return new Response(null, { status: 204, headers: corsHeaders(allow) });
 }
 
-export const runtime = "nodejs"; 
-const stripe = new Stripe(process.env.STRIPE_TEST_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
+export const runtime = "nodejs";
+
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  throw new Error("Stripe secret key is not configured. Set STRIPE_SECRET_KEY (test key).");
+}
+
+if (!stripeSecretKey.startsWith("sk_test_")) {
+  throw new Error("STRIPE_SECRET_KEY must be a test key (sk_test_...).");
+}
+
+const stripe = new Stripe(stripeSecretKey);
 
 export async function POST(req) {
   try {
@@ -65,11 +76,15 @@ export async function POST(req) {
       metadata: {
         ...metadata,
         customer_name: name || "",
+        mode: "test",
       },
     });
 
     return new Response(
-      JSON.stringify({ clientSecret: paymentIntent.client_secret }),
+      JSON.stringify({
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      }),
       {
         status: 200,
         headers: {

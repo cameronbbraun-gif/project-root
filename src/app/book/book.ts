@@ -35,15 +35,25 @@ export interface ServiceAddress {
 
 export interface BookingPaymentSummary {
   packageName: string;
+  packagePrice: number;
   addons: string[];
+  addonDetails: { name: string; price: number }[];
   total: number;
   deposit: number;
   balance: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  discountedBalance?: number;
+  promotionCode?: string;
+  promotionCodeId?: string;
   dateTimeText: string;
   vehicleLine: string;
   customerName: string;
   email: string;
+  phone: string;
   serviceAddress: ServiceAddress;
+  addonPrices: Record<string, number>;
+  additionalInstructions?: string;
 }
 
 export const PAYMENT_SUMMARY_EVENT = "dg:payment-summary";
@@ -58,12 +68,356 @@ export const PAYMENT_SUMMARY_EVENT = "dg:payment-summary";
     root: ParentNode = document
   ): T[] => Array.from(root.querySelectorAll(sel)) as T[];
   
-  export const money = (n: number): string =>
-    `$${Number(n).toFixed(0)}`;
-  
-  export const pad = (n: number): string =>
-    n < 10 ? `0${n}` : `${n}`;
-  
+export const money = (n: number): string =>
+  `$${Number(n).toFixed(0)}`;
+
+export const pad = (n: number): string =>
+  n < 10 ? `0${n}` : `${n}`;
+
+declare global {
+  interface Window {
+    dgSetBookingStep?: (step: number) => void;
+  }
+}
+
+const FORM_STORAGE_KEY = "dg-booking-form-state";
+const USED_REF_STORAGE_KEY = "dg-booking-used-refs";
+const LATEST_BOOKING_KEY = "dg-latest-booking";
+
+type PersistedValue = string | boolean;
+interface PersistedPayload {
+  version: number;
+  step?: number;
+  timestamp: number;
+  data: Record<string, PersistedValue>;
+}
+
+const escapeCssIdentifier = (value: string): string => {
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(value);
+  }
+  return value.replace(/[^a-zA-Z0-9_-]/g, (char) => `\\${char}`);
+};
+
+const dispatchFieldEvents = (field: HTMLElement) => {
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+};
+
+const getBookingFormElement = (): HTMLFormElement | null =>
+  document.getElementById("wf-form-Name-Form") as HTMLFormElement | null;
+
+function getTransientStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+const STEP_QUERY_PARAM = "step";
+
+function getStepFromUrlParam(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const url = new URL(window.location.href);
+    const value = url.searchParams.get(STEP_QUERY_PARAM);
+    if (!value) return null;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return null;
+    return Math.max(1, Math.floor(parsed));
+  } catch {
+    return null;
+  }
+}
+
+function clearStepUrlParam() {
+  if (typeof window === "undefined" || typeof window.history === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(STEP_QUERY_PARAM)) return;
+    url.searchParams.delete(STEP_QUERY_PARAM);
+    window.history.replaceState({}, "", url.toString());
+  } catch {
+    // ignore
+  }
+}
+
+export function saveBookingFormState() {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  const form = getBookingFormElement();
+  if (!form) return;
+
+  const fields = form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+    "input, select, textarea"
+  );
+  const data: Record<string, PersistedValue> = {};
+
+  fields.forEach((field) => {
+    const key = field.name || field.id;
+    if (!key) return;
+
+    if (field instanceof HTMLInputElement) {
+      if (field.type === "checkbox") {
+        data[key] = field.checked;
+      } else if (field.type === "radio") {
+        if (field.checked) {
+          data[key] = field.value;
+        }
+      } else if (field.type !== "password" && field.type !== "file") {
+        data[key] = field.value;
+      }
+    } else {
+      data[key] = field.value;
+    }
+  });
+
+  const activeStep = document.querySelector<HTMLElement>(".form-step.is-active");
+  const payload: PersistedPayload = {
+    version: 1,
+    step: activeStep ? Number(activeStep.dataset.step || "1") : 1,
+    timestamp: Date.now(),
+    data,
+  };
+
+  try {
+    storage.setItem(FORM_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn("Unable to cache booking form state", err);
+  }
+}
+
+export function restoreBookingFormState(): boolean {
+  const storage = getTransientStorage();
+  if (!storage) return false;
+  const raw = storage.getItem(FORM_STORAGE_KEY);
+  if (!raw) return false;
+
+  try {
+    const payload = JSON.parse(raw) as PersistedPayload;
+    if (!payload?.data) return false;
+
+    const form = getBookingFormElement();
+    if (!form) return false;
+
+    const setFieldValue = (
+      field: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+      stored: PersistedValue
+    ) => {
+      if (field instanceof HTMLInputElement) {
+        if (field.type === "checkbox") {
+          const next = Boolean(stored);
+          if (field.checked !== next) {
+            field.checked = next;
+            dispatchFieldEvents(field);
+          }
+        } else if (field.type === "radio") {
+          if (typeof stored === "string" && field.value === stored && !field.checked) {
+            field.checked = true;
+            dispatchFieldEvents(field);
+          }
+        } else if (typeof stored === "string" && field.value !== stored) {
+          field.value = stored;
+          dispatchFieldEvents(field);
+        }
+      } else if (typeof stored === "string" && field.value !== stored) {
+        field.value = stored;
+        dispatchFieldEvents(field);
+      }
+    };
+
+    Object.entries(payload.data).forEach(([key, stored]) => {
+      const nameSelector = `[name="${escapeCssIdentifier(key)}"]`;
+      const byName = form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        nameSelector
+      );
+      if (byName.length) {
+        byName.forEach((field) => setFieldValue(field, stored));
+        return;
+      }
+
+      const byId = form.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+        `#${escapeCssIdentifier(key)}`
+      );
+      if (byId) {
+        setFieldValue(byId, stored);
+      }
+    });
+
+    detectVehicleType();
+    renderStep2Prices();
+    updateSelectionSummary();
+    updateStep3Summary();
+    updateOrderSummaryCard();
+
+    if (payload.step) {
+      window.dgSetBookingStep?.(payload.step);
+    }
+
+    storage.removeItem(FORM_STORAGE_KEY);
+    return true;
+  } catch (err) {
+    console.warn("Unable to restore booking form state", err);
+    return false;
+  }
+}
+
+export function clearBookingFormState() {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(FORM_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function readUsedReferences(): Set<string> {
+  const storage = getTransientStorage();
+  if (!storage) return new Set();
+  try {
+    return new Set(JSON.parse(storage.getItem(USED_REF_STORAGE_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeUsedReferences(used: Set<string>) {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(USED_REF_STORAGE_KEY, JSON.stringify(Array.from(used)));
+  } catch {
+    // ignore
+  }
+}
+
+export function generateBookingReference(): string {
+  const used = readUsedReferences();
+  const year = new Date().getFullYear();
+  const prefix = `BG-${year}-`;
+
+  let candidate = "";
+  for (let i = 0; i < 6; i++) {
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    candidate = `${prefix}${suffix}`;
+    if (!used.has(candidate)) {
+      break;
+    }
+  }
+
+  used.add(candidate);
+  writeUsedReferences(used);
+  return candidate;
+}
+
+export function persistLatestBookingSummary(summary: BookingPaymentSummary, reference: string) {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(
+      LATEST_BOOKING_KEY,
+      JSON.stringify({
+        reference,
+        summary,
+        timestamp: Date.now(),
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function readLatestBooking(): { reference: string; summary: BookingPaymentSummary } | null {
+  const storage = getTransientStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(LATEST_BOOKING_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as { reference: string; summary: BookingPaymentSummary };
+  } catch {
+    return null;
+  }
+}
+
+let customInputsInitialized = false;
+
+function getCustomInputElement(input: HTMLInputElement) {
+  const label = input.closest("label");
+  if (!label) return null;
+  if (input.type === "checkbox") {
+    return label.querySelector(".w-checkbox-input");
+  }
+  if (input.type === "radio") {
+    return label.querySelector(".w-form-formradioinput");
+  }
+  return null;
+}
+
+function updateCustomFocusState(input: HTMLInputElement, isFocused: boolean) {
+  const custom = getCustomInputElement(input);
+  if (!custom) return;
+  if (isFocused) {
+    custom.classList.add("w--redirected-focus");
+    if (
+      input.matches(":focus-visible") ||
+      input.dataset?.wfFocusVisible === "true"
+    ) {
+      custom.classList.add("w--redirected-focus-visible");
+    }
+  } else {
+    custom.classList.remove("w--redirected-focus", "w--redirected-focus-visible");
+  }
+}
+
+function updateCustomCheckedState(input: HTMLInputElement) {
+  const custom = getCustomInputElement(input);
+  if (custom) {
+    custom.classList.toggle("w--redirected-checked", input.checked);
+  }
+}
+
+function syncRadioGroupState(name: string) {
+  if (!name) return;
+  const escaped =
+    typeof CSS !== "undefined" && typeof CSS.escape === "function"
+      ? CSS.escape(name)
+      : name.replace(/"/g, '\\"');
+  document
+    .querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${escaped}"]`)
+    .forEach(updateCustomCheckedState);
+}
+
+function initCustomInputStyles() {
+  if (customInputsInitialized || typeof document === "undefined") return;
+  customInputsInitialized = true;
+
+  const formRoot = document.getElementById("wf-form-Name-Form") ?? document;
+  const checkboxes = formRoot.querySelectorAll<HTMLInputElement>("input[type='checkbox']");
+  checkboxes.forEach((input) => {
+    updateCustomCheckedState(input);
+    input.addEventListener("change", () => updateCustomCheckedState(input));
+    input.addEventListener("focus", () => updateCustomFocusState(input, true));
+    input.addEventListener("blur", () => updateCustomFocusState(input, false));
+  });
+
+  const radioInputs = formRoot.querySelectorAll<HTMLInputElement>("input[type='radio']");
+  const radioGroups = new Set<string>();
+  radioInputs.forEach((input) => {
+    if (input.name) {
+      radioGroups.add(input.name);
+      input.addEventListener("change", () => syncRadioGroupState(input.name));
+    } else {
+      input.addEventListener("change", () => updateCustomCheckedState(input));
+    }
+    input.addEventListener("focus", () => updateCustomFocusState(input, true));
+    input.addEventListener("blur", () => updateCustomFocusState(input, false));
+  });
+  radioGroups.forEach((name) => syncRadioGroupState(name));
+}
+
   
   export const PRICES: Record<VehicleType, PriceSet> = {
     sedan: {
@@ -172,22 +526,30 @@ export function initStepSystem() {
     // Allow clicking the progress dots/labels to jump to a step
     stepState.progressDots.forEach((dot) => {
       const step = Number(dot.dataset.step);
-      dot.addEventListener("click", (e) => {
+      dot.addEventListener("click", async (e) => {
         e.preventDefault();
-        goToStep(step);
+        e.stopImmediatePropagation();
+        await attemptStepChange(step);
       });
     });
 
     stepState.progressLabels.forEach((label, idx) => {
       const step = idx + 1;
-      label.addEventListener("click", (e) => {
+      label.addEventListener("click", async (e) => {
         e.preventDefault();
-        goToStep(step);
+        e.stopImmediatePropagation();
+        await attemptStepChange(step);
       });
     });
 
     updateStepUI();
-  }
+
+    if (typeof window !== "undefined") {
+      window.dgSetBookingStep = (step: number) => {
+        void attemptStepChange(step);
+      };
+    }
+}
 
 export function updateStepUI() {
   const current = stepState.current;
@@ -764,20 +1126,32 @@ export function getCustomerContact() {
   const firstName = $<HTMLInputElement>("#first-name")?.value?.trim() ?? "";
   const lastName = $<HTMLInputElement>("#last-name")?.value?.trim() ?? "";
   const email = $<HTMLInputElement>("#email-address")?.value?.trim() ?? "";
+  const phone = $<HTMLInputElement>("#phone-number")?.value?.trim() ?? "";
 
-  return { firstName, lastName, email };
+  return { firstName, lastName, email, phone };
+}
+
+export function getAdditionalInstructions(): string {
+  return $<HTMLTextAreaElement>("#instructions")?.value?.trim() ?? "";
 }
 
 export function getBookingPaymentSummary(): BookingPaymentSummary {
-  const { pkgName, addons, total } = getSelectedPackageAndAddons();
+  const { pkgName, pkgPrice, addons, total } = getSelectedPackageAndAddons();
   const deposit = calculateDeposit(total);
   const address = getServiceAddressFields();
-  const { firstName, lastName, email } = getCustomerContact();
+  const { firstName, lastName, email, phone } = getCustomerContact();
   const customerName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  const addonPriceMap: Record<string, number> = {};
+  addons.forEach((addon) => {
+    addonPriceMap[addon.name] = addon.price;
+  });
+  const additionalInstructions = getAdditionalInstructions();
 
   return {
     packageName: pkgName,
+    packagePrice: pkgPrice,
     addons: addons.map((a) => a.name),
+    addonDetails: addons,
     total,
     deposit,
     balance: Math.max(total - deposit, 0),
@@ -785,7 +1159,10 @@ export function getBookingPaymentSummary(): BookingPaymentSummary {
     vehicleLine: formatVehicleLine(),
     customerName,
     email,
+    phone,
     serviceAddress: address,
+    addonPrices: addonPriceMap,
+    additionalInstructions,
   };
 }
 
@@ -1075,51 +1452,138 @@ export function initButtons() {
     $$("[data-next]").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         e.preventDefault();
-  
+        e.stopImmediatePropagation();
+        const canAdvance = await validateStepsUpTo(stepState.current, true);
+        if (!canAdvance) {
+          scrollBookingFormToProgressBar();
+          return;
+        }
+
         if (stepState.current === 1) {
           detectVehicleType();
           renderStep2Prices();
         }
   
         if (stepState.current === 2) {
-          const chosen = document.querySelector<HTMLInputElement>(
-            "input[name='Service']:checked"
-          );
-          if (!chosen) {
-            alert("Please select a service package.");
-            return;
-          }
           updateSelectionSummary();
         }
   
-        if (stepState.current === 3) {
-          if (!calendar.selectedDate) {
-            alert("Please select a date.");
-            return;
-          }
-          if (!calendar.selectedTime) {
-            alert("Please select a time.");
-            return;
-          }
-        }
-  
         if (stepState.current === 4) {
-          const ok = await validateContactInfo();
-          if (!ok) return;
           updateOrderSummaryCard();
         }
 
         goNextStep();
+        scrollBookingFormToProgressBar();
       });
     });
   
     $$("[data-back]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopImmediatePropagation();
         goPrevStep();
       });
     });
   }
+
+async function attemptStepChange(target: number) {
+  if (target <= stepState.current) {
+    goToStep(target);
+    return;
+  }
+
+  const canAdvance = await validateStepsUpTo(target - 1, true);
+  if (!canAdvance) {
+    scrollBookingFormToProgressBar();
+    return;
+  }
+
+  goToStep(target);
+  scrollBookingFormToProgressBar();
+}
+
+function scrollBookingFormToProgressBar() {
+  const progressBlock = document.querySelector<HTMLElement>(".flex-block-13");
+  if (!progressBlock) return;
+  progressBlock.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function validateSelectRequired(id: string): boolean {
+  const el = $<HTMLSelectElement>(`#${id}`);
+  if (!el) return false;
+  const valid = el.value.trim().length > 0;
+  el.classList.toggle("input-error", !valid);
+  return valid;
+}
+
+function validateStep1(showAlert: boolean): boolean {
+  const valid =
+    validateSelectRequired("vehicle-type") &&
+    validateRequiredField("vehicle-make") &&
+    validateRequiredField("vehicle-model") &&
+    validateRequiredField("vehicle-year") &&
+    validateRequiredField("vehicle-color");
+
+  if (!valid && showAlert) {
+    alert("Please complete all required vehicle details.");
+  }
+
+  return valid;
+}
+
+function validateStep2(showAlert: boolean): boolean {
+  const chosen = document.querySelector<HTMLInputElement>(
+    "input[name='Service']:checked"
+  );
+  const valid = Boolean(chosen);
+
+  if (!valid && showAlert) {
+    alert("Please select a service package.");
+  }
+
+  return valid;
+}
+
+function validateStep3(showAlert: boolean): boolean {
+  const valid = Boolean(calendar.selectedDate && calendar.selectedTime);
+  if (!valid && showAlert) {
+    alert("Please select a date and time.");
+  }
+  return valid;
+}
+
+function validateRequiredCheckbox(id: string): boolean {
+  const el = $<HTMLInputElement>(`#${id}`);
+  if (!el) return false;
+  const valid = el.checked;
+  el.classList.toggle("input-error", !valid);
+  return valid;
+}
+
+async function validateStep4(showAlert: boolean): Promise<boolean> {
+  const contactValid = await validateContactInfo();
+  const accessValid = validateRequiredCheckbox("access-confirm");
+  const valid = contactValid && accessValid;
+  if (!valid && showAlert) {
+    alert("Please complete your contact info and confirm water and power access.");
+  }
+  return valid;
+}
+
+export async function validateStepsUpTo(step: number, showAlert = true): Promise<boolean> {
+  const checks = Math.max(1, step);
+
+  if (checks >= 1 && !validateStep1(showAlert)) return false;
+  if (checks >= 2 && !validateStep2(showAlert)) return false;
+  if (checks >= 3 && !validateStep3(showAlert)) return false;
+  if (checks >= 4 && !(await validateStep4(showAlert))) return false;
+
+  return true;
+}
+
+export async function validateBookingForPayment(): Promise<boolean> {
+  return validateStepsUpTo(4, true);
+}
   
   export function initLivePriceUpdates() {
   $$("input[name='Service']").forEach((radio) => {
@@ -1153,21 +1617,28 @@ export function initButtons() {
   }
   
   export function initBookingSystem() {
+    initCustomInputStyles();
     initStepSystem();
     initButtons();
   
     initLivePriceUpdates();
+    initCalendarSystem();
+    initContactInfoStep();
+    const restored = restoreBookingFormState();
+    const requestedStep = getStepFromUrlParam();
+    if (requestedStep) {
+      window.dgSetBookingStep?.(requestedStep);
+      clearStepUrlParam();
+    } else if (!restored) {
+      window.dgSetBookingStep?.(1);
+    }
+  
     renderStep2Prices();
     updateSelectionSummary();
+    updateStep3ServiceSummary();
+    updateOrderSummaryCard();
   
-  initCalendarSystem();
-  updateStep3ServiceSummary();
-
-  initContactInfoStep();
-
-  updateOrderSummaryCard();
-  
-  console.log("%cBooking System Initialized", "color: #00aaff; font-size: 18px;");
+    console.log("%cBooking System Initialized", "color: #00aaff; font-size: 18px;");
 }
   
   if (typeof window !== "undefined") {

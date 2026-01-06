@@ -283,10 +283,10 @@ export default function Home() {
               <div className="form-wrapper w-form">
                 <div className="form-style">
                   <div className="textarea-wrapper">
-                    <div className="dropdown w-dropdown">
-                      <div className="dropdown-toggle-2 w-dropdown-toggle">
+                    <div className="dropdown w-dropdown faq-dropdown">
+                      <div className="dropdown-toggle-2 w-dropdown-toggle faq-toggle">
                         <div className="w-icon-dropdown-toggle"></div>
-                        <div className="text-block">How much does it cost?</div>
+                        <div className="text-block faq-question">How much does it cost?</div>
                       </div>
                       <nav className="dropdown-list w-dropdown-list">
                         <div className="dropdown-link w-dropdown-link">
@@ -301,10 +301,10 @@ export default function Home() {
               <div className="form-wrapper w-form">
                 <div className="form-style">
                   <div className="textarea-wrapper">
-                    <div className="dropdown w-dropdown">
-                      <div className="dropdown-toggle-3 w-dropdown-toggle">
+                    <div className="dropdown w-dropdown faq-dropdown">
+                      <div className="dropdown-toggle-3 w-dropdown-toggle faq-toggle">
                         <div className="w-icon-dropdown-toggle"></div>
-                        <div className="text-block">Do you offer interior cleaning?</div>
+                        <div className="text-block faq-question">Do you offer interior cleaning?</div>
                       </div>
                       <nav className="dropdown-list w-dropdown-list">
                         <div className="dropdown-link w-dropdown-link">
@@ -319,10 +319,10 @@ export default function Home() {
               <div className="form-wrapper w-form">
                 <div className="form-style">
                   <div className="textarea-wrapper">
-                    <div className="dropdown w-dropdown">
-                      <div className="dropdown-toggle-4 w-dropdown-toggle">
+                    <div className="dropdown w-dropdown faq-dropdown">
+                      <div className="dropdown-toggle-4 w-dropdown-toggle faq-toggle">
                         <div className="w-icon-dropdown-toggle"></div>
-                        <div className="text-block">What areas do you serve?</div>
+                        <div className="text-block faq-question">What areas do you serve?</div>
                       </div>
                       <nav className="dropdown-list w-dropdown-list">
                         <div className="dropdown-link w-dropdown-link">
@@ -337,10 +337,10 @@ export default function Home() {
               <div className="form-wrapper w-form">
                 <div className="form-style">
                   <div className="textarea-wrapper">
-                    <div className="dropdown w-dropdown">
-                      <div className="dropdown-toggle-5 w-dropdown-toggle">
+                    <div className="dropdown w-dropdown faq-dropdown">
+                      <div className="dropdown-toggle-5 w-dropdown-toggle faq-toggle">
                         <div className="w-icon-dropdown-toggle"></div>
-                        <div className="text-block">How long does it take?</div>
+                        <div className="text-block faq-question">How long does it take?</div>
                       </div>
                       <nav className="dropdown-list w-dropdown-list">
                         <div className="dropdown-link w-dropdown-link">
@@ -355,10 +355,10 @@ export default function Home() {
               <div className="form-wrapper w-form">
                 <div className="form-style">
                   <div className="textarea-wrapper">
-                    <div className="dropdown w-dropdown">
-                      <div className="dropdown-toggle-6 w-dropdown-toggle">
+                    <div className="dropdown w-dropdown faq-dropdown">
+                      <div className="dropdown-toggle-6 w-dropdown-toggle faq-toggle">
                         <div className="w-icon-dropdown-toggle"></div>
-                        <div className="text-block">What payment methods do you accept?</div>
+                        <div className="text-block faq-question">What payment methods do you accept?</div>
                       </div>
                       <nav className="dropdown-list w-dropdown-list">
                         <div className="dropdown-link w-dropdown-link">

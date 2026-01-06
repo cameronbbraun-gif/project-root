@@ -149,7 +149,7 @@ export default function QuoteConfirmationEmail({
 
           {/* Body */}
           <div style={body}>
-            <h1 style={h1}>We received your quote request ✅</h1>
+            <h1 style={h1}>We received your quote request</h1>
             <p style={lead}>
               Hi {firstName || "there"}, thanks for reaching out — we received your
               request and will get back to you shortly.

@@ -99,7 +99,7 @@ export default function BookingPage() {
           >
             <div className="container-23">
               <div className="navbar-wrapper-4">
-                <a href="#" className="navbar-brand-5 w-nav-brand">
+                <Link href="/" className="navbar-brand-5 w-nav-brand">
                   <img
                     src="/images/logo.png"
                     loading="lazy"
@@ -109,24 +109,24 @@ export default function BookingPage() {
                     className="image-13"
                   />
                   <h1 className="heading-3">Detail Geeks</h1>
-                </a>
+                </Link>
                 <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
                   <ul className="nav-menu-two-3 w-list-unstyled">
-                    <li><Link href="/index.html" className="nav-link-4">Home</Link></li>
-                    <li><Link href="/about-us.html" className="nav-link-4">About Us</Link></li>
-                    <li><Link href="/pricing.html" className="nav-link-4">Pricing</Link></li>
-                    <li><Link href="/contact.html" className="nav-link-4">Contact</Link></li>
+                    <li><Link href="/" className="nav-link-4">Home</Link></li>
+                    <li><Link href="/about-us" className="nav-link-4">About Us</Link></li>
+                    <li><Link href="/pricing" className="nav-link-4">Pricing</Link></li>
+                    <li><Link href="/contact" className="nav-link-4">Contact</Link></li>
 
                     <li><div className="nav-divider-3" /></li>
 
                     <li className="mobile-margin-top-14">
-                      <Link href="/get-a-quote.html" className="button-primary-8 w-button">
+                      <Link href="/get-a-quote" className="button-primary-8 w-button">
                         Get a Quote
                       </Link>
                     </li>
 
                     <li className="mobile-margin-top-14">
-                      <Link href="/book.html" className="button-primary-7 w-button w--current">
+                      <Link href="/book" className="button-primary-7 w-button w--current">
                         Book Now
                       </Link>
                     </li>
@@ -211,13 +211,14 @@ export default function BookingPage() {
               </div>
             </div>
 
-            <form
+            <div
               id="wf-form-Name-Form"
               name="wf-form-Name-Form"
               data-name="Name Form"
               method="get"
               autoComplete="off"
               className="form-2"
+              role="form"
             >
               <div
                 className="w-layout-vflex flex-block-16 form-step is-active"
@@ -885,7 +886,7 @@ export default function BookingPage() {
           </div>
         </div>
 
-                <div
+        <div
           className="w-layout-vflex flex-block-338 form-step"
           data-step="4"
           id="step-4"
@@ -1053,7 +1054,7 @@ export default function BookingPage() {
                 <li>Access to a standard electrical outlet within 100 feet is required</li>
               </ul>
               <label className="important-notes-confirm">
-                <input type="checkbox" id="access-confirm" name="access-confirm" />
+                <input type="checkbox" id="access-confirm" name="access-confirm" required />
                 <span>I confirm I have water and power access available within 100 feet of my vehicle.</span>
               </label>
             </div>
@@ -1071,15 +1072,13 @@ export default function BookingPage() {
             </a>
           </div>
         </div>
-
         <CheckoutPaymentStep />
-
-      </form>
-      {/* END FORM */}
+      </div>
     </div>
-    </div>
+  </div>
+  {/* END FORM */}
 
-    <div className="footer">
+  <div className="footer">
       <div className="columns-3">
             <div className="column-13">
               <div className="title-style">

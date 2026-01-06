@@ -158,7 +158,7 @@ export async function POST(req) {
 
     const confirmation = sendResendEmail({
       to: email,
-      subject: "We received your message ✅",
+      subject: "We received your message",
       html: confirmationHtml,
     });
 

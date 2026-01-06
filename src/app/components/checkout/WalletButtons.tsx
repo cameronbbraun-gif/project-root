@@ -9,9 +9,10 @@ import type {
 
 interface WalletButtonsProps {
   amount: number;
-  createPaymentIntent: () => Promise<{ clientSecret?: string } | null>;
-  onPaymentSuccess: () => void;
+  createPaymentIntent: () => Promise<{ clientSecret?: string; paymentIntentId?: string } | null>;
+  onPaymentSuccess: (paymentIntentId?: string) => void | Promise<void>;
   onError: (message: string) => void;
+  onPaymentFailure?: (message: string) => void;
   onProcessingChange?: (processing: boolean) => void;
   disabled?: boolean;
   termsAccepted: boolean;
@@ -21,6 +22,7 @@ const paymentButtonStyle = {
   paymentRequestButton: {
     theme: "dark" as const,
     type: "default" as const,
+    height: "44px",
   },
 };
 
@@ -29,6 +31,7 @@ export default function WalletButtons({
   createPaymentIntent,
   onPaymentSuccess,
   onError,
+  onPaymentFailure,
   onProcessingChange,
   disabled = false,
   termsAccepted,
@@ -36,15 +39,15 @@ export default function WalletButtons({
   const stripe = useStripe();
   const [canPay, setCanPay] = useState(false);
   const paymentRequestRef = useRef<StripePaymentRequest | null>(null);
-  const paymentHandlerRef = useRef<((event: PaymentRequestPaymentMethodEvent) => void) | null>(
-    null
-  );
+  const paymentHandlerRef = useRef<((event: PaymentRequestPaymentMethodEvent) => void) | null>(null);
   const latestCallbacksRef = useRef({
     termsAccepted,
     createPaymentIntent,
     onError,
+    onPaymentFailure,
     onProcessingChange,
     onPaymentSuccess,
+    disabled,
   });
 
   useEffect(() => {
@@ -52,40 +55,59 @@ export default function WalletButtons({
       termsAccepted,
       createPaymentIntent,
       onError,
+      onPaymentFailure,
       onProcessingChange,
       onPaymentSuccess,
+      disabled,
     };
-  }, [termsAccepted, createPaymentIntent, onError, onProcessingChange, onPaymentSuccess]);
+  }, [termsAccepted, createPaymentIntent, onError, onPaymentFailure, onProcessingChange, onPaymentSuccess, disabled]);
 
   useEffect(() => {
-    if (!stripe || paymentRequestRef.current) return;
+    const teardown = () => {
+      if (paymentRequestRef.current && paymentHandlerRef.current) {
+        paymentRequestRef.current.off("paymentmethod", paymentHandlerRef.current);
+      }
+      paymentRequestRef.current = null;
+      paymentHandlerRef.current = null;
+    };
+
+    setCanPay(false);
+
+    if (!stripe || !amount || amount <= 0) {
+      teardown();
+      return;
+    }
+
+    teardown();
+    const stripeClient = stripe;
 
     const pr = stripe.paymentRequest({
       country: "US",
       currency: "usd",
       total: {
         label: "Booking Deposit",
-        amount: 50,
+        amount: Math.max(Math.round(amount * 100), 50),
       },
       requestPayerName: true,
       requestPayerEmail: true,
     });
 
     const handlePaymentMethod = async (event: PaymentRequestPaymentMethodEvent) => {
-      const callbacks = latestCallbacksRef.current;
-      if (!stripe) {
-        event.complete("fail");
-        callbacks.onError("Payment system isn\u2019t ready. Please try again.");
-        return;
-      }
-
       const {
         termsAccepted: latestTerms,
         onError: latestOnError,
+        onPaymentFailure: latestOnPaymentFailure,
         onProcessingChange: latestOnProcessingChange,
         createPaymentIntent: latestCreatePaymentIntent,
         onPaymentSuccess: latestOnPaymentSuccess,
-      } = callbacks;
+        disabled: latestDisabled,
+      } = latestCallbacksRef.current;
+
+      if (latestDisabled) {
+        event.complete("fail");
+        latestOnError("Another payment is already processing. Please wait.");
+        return;
+      }
 
       if (!latestTerms) {
         event.complete("fail");
@@ -99,28 +121,37 @@ export default function WalletButtons({
 
         const res = await latestCreatePaymentIntent();
         const clientSecret = res?.clientSecret;
+        const fallbackIntentId =
+          res?.paymentIntentId ||
+          (clientSecret ? clientSecret.split("_secret")[0] : undefined);
         if (!clientSecret) {
           event.complete("fail");
-          latestOnError("Unable to start payment right now.");
+          const message = "Unable to start payment right now.";
+          latestOnError(message);
+          latestOnPaymentFailure?.(message);
           return;
         }
 
-        const { error } = await stripe.confirmCardPayment(
+        const { error, paymentIntent } = await stripeClient.confirmCardPayment(
           clientSecret,
           { payment_method: event.paymentMethod.id },
           { handleActions: true }
         );
 
         if (error) {
-          latestOnError(error.message ?? "Payment failed. Please try another method.");
+          const message = error.message ?? "Payment failed. Please try another method.";
+          latestOnError(message);
+          latestOnPaymentFailure?.(message);
           event.complete("fail");
           return;
         }
 
         event.complete("success");
-        latestOnPaymentSuccess();
+        await latestOnPaymentSuccess(paymentIntent?.id || fallbackIntentId);
       } catch (err) {
-        latestOnError(err instanceof Error ? err.message : "Payment failed. Please try again.");
+        const message = err instanceof Error ? err.message : "Payment failed. Please try again.";
+        latestOnError(message);
+        latestOnPaymentFailure?.(message);
         event.complete("fail");
       } finally {
         latestOnProcessingChange?.(false);
@@ -144,46 +175,14 @@ export default function WalletButtons({
 
     return () => {
       mounted = false;
-      if (paymentRequestRef.current && paymentHandlerRef.current) {
-        paymentRequestRef.current.off("paymentmethod", paymentHandlerRef.current);
+      pr.off("paymentmethod", handlePaymentMethod);
+      if (paymentRequestRef.current === pr) {
+        paymentRequestRef.current = null;
+        paymentHandlerRef.current = null;
       }
-      paymentRequestRef.current = null;
-      paymentHandlerRef.current = null;
       setCanPay(false);
     };
-  }, [stripe]);
-
-  useEffect(() => {
-    let mounted = true;
-    const pr = paymentRequestRef.current;
-    if (!pr) return;
-
-    if (!stripe || !amount || amount <= 0 || disabled) {
-      setCanPay(false);
-      return;
-    }
-
-    pr.update({
-      total: {
-        label: "Booking Deposit",
-        amount: Math.max(Math.round(amount * 100), 50),
-      },
-    });
-
-    pr.canMakePayment()
-      .then((result) => {
-        if (!mounted) return;
-        setCanPay(Boolean(result));
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setCanPay(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [amount, disabled, stripe]);
+  }, [amount, stripe]);
 
   if (!stripe || !paymentRequestRef.current || !canPay) return null;
 
@@ -194,7 +193,6 @@ export default function WalletButtons({
           options={{
             paymentRequest: paymentRequestRef.current,
             style: paymentButtonStyle,
-            disableMultipleButtons: false,
           }}
         />
       </div>

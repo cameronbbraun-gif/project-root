@@ -8,9 +8,9 @@ export default function AboutUsPage() {
     <div data-animation="default" data-collapse="medium" data-duration="400" data-easing="ease" data-easing2="ease" role="banner" className="navbar-logo-left-container-3 shadow-three w-nav">
       <div className="container-23">
         <div className="navbar-wrapper-4">
-          <a href="#" className="navbar-brand-5 w-nav-brand"><img src="/images/logo.png" loading="lazy" width="92" sizes="91.98529052734375px" alt="" srcSet="../images/logo-p-500.png 500w, ../images/logo-p-800.png 800w, ../images/logo-p-1080.png 1080w, ../images/logo-p-1600.png 1600w, ../images/logo-p-2000.png 2000w, ../images/logo-p-2600.png 2600w, ../images/logo-p-3200.png 3200w, ../images/favicon.png 4096w" className="image-13"/>
+          <Link href="/" className="navbar-brand-5 w-nav-brand"><img src="/images/logo.png" loading="lazy" width="92" sizes="91.98529052734375px" alt="" srcSet="../images/logo-p-500.png 500w, ../images/logo-p-800.png 800w, ../images/logo-p-1080.png 1080w, ../images/logo-p-1600.png 1600w, ../images/logo-p-2000.png 2000w, ../images/logo-p-2600.png 2600w, ../images/logo-p-3200.png 3200w, ../images/favicon.png 4096w" className="image-13"/>
             <h1 className="heading-3">Detail Geeks</h1>
-          </a>
+          </Link>
           <nav role="navigation" className="nav-menu-wrapper-4 w-nav-menu">
             <ul role="list" className="nav-menu-two-3 w-list-unstyled">
               <li>
@@ -185,12 +185,12 @@ export default function AboutUsPage() {
         </div>
         <div className="column-20">
           <div className="actions-10">
-            <a href="book.html" target="_blank" className="button-style-14">
+            <a href="/book" target="_blank" className="button-style-14">
               <div className="text-69">Book Now</div>
             </a>
           </div>
           <div className="actions-10">
-            <a href="pricing.html" target="_blank" className="button-style-15">
+            <a href="/pricing" target="_blank" className="button-style-15">
               <div className="text-70">Learn More</div>
             </a>
           </div>

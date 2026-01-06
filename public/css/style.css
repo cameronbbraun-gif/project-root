@@ -3214,6 +3214,47 @@
   transition: opacity .3s;
 }
 
+.faq-toggle {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+}
+
+.faq-dropdown {
+  width: 100%;
+  max-width: 768px;
+}
+
+.faq-dropdown .dropdown-toggle-2,
+.faq-dropdown .dropdown-toggle-3,
+.faq-dropdown .dropdown-toggle-4,
+.faq-dropdown .dropdown-toggle-5,
+.faq-dropdown .dropdown-toggle-6,
+.faq-dropdown .dropdown-list.w--open,
+.faq-dropdown .dropdown-link {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.faq-question {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.dropdown-toggle-2,
+.dropdown-toggle-3,
+.dropdown-toggle-4,
+.dropdown-toggle-5,
+.dropdown-toggle-6 {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+}
+
 .text-block {
   font-family: Roboto, sans-serif;
   font-size: 18px;

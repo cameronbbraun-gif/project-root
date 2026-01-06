@@ -76,18 +76,17 @@ export default function PrivacyPolicyPage() {
 
       <div className="hero-heading-left-11">
         <div className="container-26">
-          <div className="w-layout-vflex flex-block-11">
-            <div className="w-layout-vflex">
-              <h2 className="heading-5">Detail Geeks Privacy Policy.</h2>
-              <p className="paragraph">Last updated: 6/4/25</p>
-            </div>
+          <div className="privacy-layout">
+            <div className="privacy-main">
+              <div className="privacy-header w-layout-vflex">
+                <h2 className="heading-5">Detail Geeks Privacy Policy.</h2>
+                <p className="paragraph">Last updated: 6/4/25</p>
+              </div>
 
-            <div className="w-layout-hflex flex-block-10">
-              <div className="column-21">
+              <div className="privacy-content w-layout-hflex flex-block-10">
                 <div className="column-21">
-
-
-                  <p className="paragraph">
+                  <div className="column-21">
+                    <p className="paragraph">
                     This Privacy Policy describes how Detail Geeks (the &quot;Site&quot;,&quot;we&quot;,&quot;us&quot;, or &quot;our&quot;)
                     collects, uses, and discloses your personal information when you visit, use
                     our services, or make a purchase from detailgeeksautospa.com (the &quot;Site&quot;) or
@@ -95,195 +94,195 @@ export default function PrivacyPolicyPage() {
                     this Privacy Policy, &quot;you&quot; and &quot;your&quot; means you as the user of the Services,
                     whether you are a customer, website visitor, or another individual whose
                     information we have collected pursuant to this Privacy Policy.
-                  </p>
+                    </p>
 
-                  <p className="paragraph">
+                    <p className="paragraph">
                     Please read this Privacy Policy carefully. By using and accessing any of the
                     Services, you agree to the collection, use, and disclosure of your information
                     as described in this Privacy Policy. If you do not agree to this Privacy
                     Policy, please do not use or access any of the Services.
-                  </p>
+                    </p>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Changes to This Privacy Policy</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="changes" className="heading-4">Changes to This Privacy Policy</h3>
+                      <p className="paragraph">
                       We may update this Privacy Policy from time to time, including to reflect
                       changes to our practices or for other operational, legal, or regulatory
                       reasons. We will post the revised Privacy Policy on the Site, update the
                       &quot;Last updated&quot; date and take any other steps required by applicable law.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">How We Collect and Use Your Personal Information</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="collect-use" className="heading-4">How We Collect and Use Your Personal Information</h3>
+                      <p className="paragraph">
                       To provide the Services, we collect and have collected over the past 12
                       months personal information about you from a variety of sources, as set out
                       below. The information that we collect and use varies depending on how you
                       interact with us.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">What Personal Information We Collect</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="what-we-collect" className="heading-4">What Personal Information We Collect</h3>
+                      <p className="paragraph">
                       The types of personal information we obtain about you depend on how you interact with our Site and use our Services. When we use the term “personal information”, we are referring to information that identifies, relates to, describes or can be associated with you. The following sections describe the categories and specific types of personal information we collect.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Information We Collect Directly from You</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="directly-from-you" className="heading-4">Information We Collect Directly from You</h3>
+                      <p className="paragraph">
                       Information that you directly submit to us through our Services may include:
                       <br />- Basic contact details including your name, address, phone number, email.
                       <br />- Order information including your name, billing address, shipping address, payment confirmation, email address, phone number.
                       <br />- Account information, such as your username, password, and security questions.
                       <br />- Shopping information, including the items you view, put in your cart or add to your wishlist.
                       <br />- Customer support information, including the information you choose to include in communications with us, for example, when sending a message through the Services.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Information We Collect through Cookies</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="cookies" className="heading-4">Information We Collect through Cookies</h3>
+                      <p className="paragraph">
                       We also automatically collect certain information about your interaction with the Services (“Usage Data”). To do this, we may use cookies, pixels and similar technologies (“Cookies”). Usage Data may include information about how you access and use our Site and your account, including device information, browser information, network connection, IP address, and other information regarding your interaction with the Services.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Information We Obtain from Third Parties</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="third-parties" className="heading-4">Information We Obtain from Third Parties</h3>
+                      <p className="paragraph">
                       We may obtain information about you from third parties, such as vendors and service providers who collect information on our behalf, such as: companies who support our Site and Services (e.g., Shopify), payment processors, analytics providers, and advertising partners. We may combine such information with information we already have about you. The information we obtain from third parties includes demographic information, additional contact information, information about your interests, and information about your purchase history.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">How We Use Your Personal Information</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="use-personal-info" className="heading-4">How We Use Your Personal Information</h3>
+                      <p className="paragraph">
                       We use your personal information for the following purposes:
                       <br />- Providing Products and Services: We use your personal information to provide you with the Services, process your orders and returns, and maintain your account.
                       <br />- Marketing and Advertising: We use your personal information for marketing and promotional purposes, such as to send marketing, advertising, and promotional communications by email, text message, or postal mail, and to show you advertisements for products or services. This may include using your personal information to better tailor the Services and advertising on our Site and other websites.
                       <br />- Security and Fraud Prevention: We use your personal information to detect, investigate or take action regarding possible fraudulent, illegal, or malicious activity. If you use the Services and create an account, we may use your personal information to verify your identity or account credentials.
                       <br />- Communicating with You: We use your personal information to communicate with you, including to provide customer support and respond to your requests, questions, and feedback.
                       <br />- Analytics and Improvement: We use your personal information to analyze how you use the Services in order to improve the Services and develop new products or features.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Cookies</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="cookies-policy" className="heading-4">Cookies</h3>
+                      <p className="paragraph">
                       Like many websites, we use Cookies on our Site. For specific information about the Cookies that we use to power our store with Shopify, see <a href="https://www.shopify.com/legal/cookies" target="_blank" rel="noopener noreferrer">https://www.shopify.com/legal/cookies</a>. We use Cookies to power and improve our Site and Services (including to remember your actions and preferences), to run analytics, and to better understand user interaction with the Services (in our legitimate interests to administer, improve and optimize the Services). We may also permit third parties and service providers to use Cookies on our Site to better tailor the services, products and advertising on our Site and other websites.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <p className="paragraph">
-                    Most browsers automatically accept Cookies, but you can disable this through your browser controls. Please note that disabling Cookies may affect your ability to use some features of the Services.
-                  </p>
-
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">How We Disclose Personal Information</h3>
                     <p className="paragraph">
+                    Most browsers automatically accept Cookies, but you can disable this through your browser controls. Please note that disabling Cookies may affect your ability to use some features of the Services.
+                    </p>
+
+                    <div className="w-layout-vflex">
+                      <h3 id="disclose" className="heading-4">How We Disclose Personal Information</h3>
+                      <p className="paragraph">
                       In certain circumstances, we may disclose your personal information to third parties for legitimate purposes subject to this Privacy Policy. Such circumstances may include:
                       <br />- With vendors or other third parties who perform services on our behalf (such as IT management, payment processing, data analytics, customer support, cloud storage, fulfillment, and shipping).
                       <br />- With business and marketing partners, including Shopify, to provide services and advertising to you.
                       <br />- When you direct, request us or otherwise consent to our disclosure of certain information to third parties, such as to ship your order or through your use of social media widgets or login integrations, with your consent.
                       <br />- With our affiliates or otherwise within our corporate group, in our legitimate interests to run a successful business.
                       <br />- In connection with a business transaction such as a merger or bankruptcy, to comply with any applicable law, regulation, legal process or governmental request, or to protect our rights or the rights of others.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Category</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="category" className="heading-4">Category</h3>
+                      <p className="paragraph">
                       The categories of personal information we may collect and disclose for business purposes include:
                       <br />- Identifiers (such as your name, address, phone number, email address)
                       <br />- Commercial information (such as order information, purchase history)
                       <br />- Internet or other similar network activity (such as Usage Data, as described above)
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Categories of Recipients</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="recipients" className="heading-4">Categories of Recipients</h3>
+                      <p className="paragraph">
                       We may disclose your personal information to the following categories of recipients:
                       <br />- Vendors and service providers (such as payment processors, fulfillment partners, IT service providers)
                       <br />- Business partners
                       <br />- Affiliates within our corporate group
                       <br />- Law enforcement or other governmental authorities where required by law
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Category of Personal Information</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="category-personal-info" className="heading-4">Category of Personal Information</h3>
+                      <p className="paragraph">
                       The following categories of personal information may be disclosed for business purposes:
                       <br />- Identifiers
                       <br />- Commercial Information
                       <br />- Internet or Other Electronic Network Activity Information
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">User Generated Content</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="user-content" className="heading-4">User Generated Content</h3>
+                      <p className="paragraph">
                       The Services may enable you to post product reviews and other user generated content. If you choose to submit user generated content to any public area of the Services, this content will be public and accessible by anyone. We do not control who will have access to the information that you choose to make available to others, and cannot ensure that parties who have access to such information will respect your privacy or keep it secure. We are not responsible for the privacy or security of any information that you make publicly available, or for the accuracy, use or misuse of any information that you disclose or receive from third parties.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Third Party Websites and Links</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="third-party-links" className="heading-4">Third Party Websites and Links</h3>
+                      <p className="paragraph">
                       Our Site may provide links to websites or other online platforms operated by third parties. If you follow links to sites not affiliated with us, you should review their privacy and security policies and other terms and conditions. We do not guarantee and are not responsible for the privacy or security of such sites, including the accuracy, completeness, or reliability of information found on these sites. Information you provide on public or semi-public venues, including information you share on third-party social networking platforms, may also be viewable by other users of the Services and/or users of those third-party platforms without limitation as to its use by us or by a third party. Our inclusion of such links does not, by itself, imply any endorsement of the content on such platforms or of their owners or operators.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Children’s Data</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="children" className="heading-4">Children’s Data</h3>
+                      <p className="paragraph">
                       The Services are not intended to be used by children, and we do not knowingly collect any personal information about children under the age of 13. If you are the parent or guardian of a child who has provided us with their personal information, you may contact us using the contact details set out below to request that it be deleted. As of the Effective Date of this Privacy Policy, we do not have actual knowledge that we “share” or “sell” (as those terms are defined in applicable law) personal information of individuals under 16 years of age.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Security and Retention of Your Information</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="security" className="heading-4">Security and Retention of Your Information</h3>
+                      <p className="paragraph">
                       Please be aware that no security measures are perfect or impenetrable. While we take reasonable steps to protect your personal information, we cannot guarantee the security of your information. We retain your personal information for as long as necessary to fulfill the purposes for which we collect it, including for the purposes of satisfying any legal, accounting, or reporting obligations, to resolve disputes, and to enforce our agreements.
-                    </p>
-                  </div>
+                      </p>
+                    </div>
 
-                  <div className="w-layout-vflex">
-                    <h3 className="heading-4">Contact Us</h3>
-                    <p className="paragraph">
+                    <div className="w-layout-vflex">
+                      <h3 id="contact-us" className="heading-4">Contact Us</h3>
+                      <p className="paragraph">
                       If you have any questions about our privacy practices or this Privacy Policy, or if you would like to exercise your rights and choices as described in this Privacy Policy, please contact us at:
                       <br />Detail Geeks Auto Spa
                       <br />(813) 838-3560
                       <br />support@detailgeeksautospa.com
-                    </p>
+                      </p>
+                    </div>
                   </div>
-
                 </div>
               </div>
-
-              <div className="toc">
-                <div className="text-108">Table of Contents:</div>
-                <ul role="list" className="list-2">
-                  <li><a className="link-17">Changes to this Privacy Policy</a></li>
-                  <li><a className="link-17">How We Collect and Use Your Personal Information</a></li>
-                  <li><a className="link-17">What Personal Information We Collect</a></li>
-                  <li><a className="link-17">Information We Collect Directly from You</a></li>
-                  <li><a className="link-17">Information We Collect through Cookies</a></li>
-                  <li><a className="link-17">Information We Obtain from Third Parties</a></li>
-                  <li><a className="link-17">How We Use Your Personal Information</a></li>
-                  <li><a className="link-17">How We Disclose Personal Information</a></li>
-                  <li><a className="link-17">Category of Personal Information</a></li>
-                  <li><a className="link-17">Third Party Websites and Links</a></li>
-                  <li><a className="link-17">Children&apos;s Data</a></li>
-                  <li><a className="link-17">Security and Retention of Your Information</a></li>
-                  <li><a className="link-17">Contact Us.</a></li>
-                </ul>
-              </div>
-
             </div>
+
+            <div className="toc">
+              <div className="text-108">Table of Contents:</div>
+              <ul role="list" className="list-2">
+                <li><a className="link-17" href="#changes">Changes to this Privacy Policy</a></li>
+                <li><a className="link-17" href="#collect-use">How We Collect and Use Your Personal Information</a></li>
+                <li><a className="link-17" href="#what-we-collect">What Personal Information We Collect</a></li>
+                <li><a className="link-17" href="#directly-from-you">Information We Collect Directly from You</a></li>
+                <li><a className="link-17" href="#cookies">Information We Collect through Cookies</a></li>
+                <li><a className="link-17" href="#third-parties">Information We Obtain from Third Parties</a></li>
+                <li><a className="link-17" href="#use-personal-info">How We Use Your Personal Information</a></li>
+                <li><a className="link-17" href="#disclose">How We Disclose Personal Information</a></li>
+                <li><a className="link-17" href="#category-personal-info">Category of Personal Information</a></li>
+                <li><a className="link-17" href="#third-party-links">Third Party Websites and Links</a></li>
+                <li><a className="link-17" href="#children">Children&apos;s Data</a></li>
+                <li><a className="link-17" href="#security">Security and Retention of Your Information</a></li>
+                <li><a className="link-17" href="#contact-us">Contact Us.</a></li>
+              </ul>
+            </div>
+
           </div>
         </div>
       </div>
@@ -381,6 +380,57 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
       </div>
+      <style jsx global>{`
+        .privacy-layout {
+          display: flex;
+          align-items: flex-start;
+          gap: 48px;
+        }
+
+        .privacy-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .privacy-header {
+          margin-bottom: 24px;
+        }
+
+        .privacy-content {
+          align-items: flex-start;
+        }
+
+        .privacy-content .column-21 {
+          width: 100%;
+        }
+
+        .privacy-content .w-layout-vflex {
+          margin-bottom: 20px;
+        }
+
+        .privacy-content .paragraph {
+          line-height: 1.7;
+          margin-bottom: 16px;
+        }
+
+        .privacy-content .heading-4 {
+          scroll-margin-top: 120px;
+        }
+
+        .toc {
+          margin-top: 0;
+        }
+
+        @media (max-width: 991px) {
+          .privacy-layout {
+            flex-direction: column;
+          }
+
+          .toc {
+            width: 100%;
+          }
+        }
+      `}</style>
     </>
   );
 }
