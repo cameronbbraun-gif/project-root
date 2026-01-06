@@ -380,6 +380,10 @@ function updateCustomCheckedState(input: HTMLInputElement) {
   if (custom) {
     custom.classList.toggle("w--redirected-checked", input.checked);
   }
+  const label = input.closest("label");
+  if (label?.classList.contains("checkbox-field-2")) {
+    label.classList.toggle("addon-selected", input.checked);
+  }
 }
 
 function syncRadioGroupState(name: string) {
