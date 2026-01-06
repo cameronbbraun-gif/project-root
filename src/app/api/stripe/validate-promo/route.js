@@ -28,11 +28,14 @@ export const runtime = "nodejs";
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
 if (!stripeSecretKey) {
-  throw new Error("Stripe secret key is not configured. Set STRIPE_SECRET_KEY (test key).");
+  throw new Error("Stripe secret key is not configured. Set STRIPE_SECRET_KEY.");
 }
 
-if (!stripeSecretKey.startsWith("sk_test_")) {
-  throw new Error("STRIPE_SECRET_KEY must be a test key (sk_test_...).");
+const isTestKey = stripeSecretKey.startsWith("sk_test_");
+const isLiveKey = stripeSecretKey.startsWith("sk_live_");
+
+if (!isTestKey && !isLiveKey) {
+  throw new Error("STRIPE_SECRET_KEY must start with sk_test_ or sk_live_.");
 }
 
 const stripe = new Stripe(stripeSecretKey);
