@@ -43,6 +43,10 @@ export function initContactForm() {
 
   form.addEventListener("submit", async (e: Event) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") {
+      e.stopImmediatePropagation();
+    }
 
     const first = (form.querySelector('[name="first_name"]') as HTMLInputElement)
       ?.value?.trim() || "";
@@ -119,5 +123,5 @@ export function initContactForm() {
       failBox.textContent =
         "Network error submitting form. Please try again.";
     }
-  });
+  }, { capture: true });
 }

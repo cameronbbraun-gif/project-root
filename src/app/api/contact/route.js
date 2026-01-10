@@ -14,6 +14,41 @@ const ALLOWED_ORIGINS = [
   "https://www.detailgeeksautospa.com",
 ];
 
+async function readBody(req) {
+  const contentType = (req.headers.get("content-type") || "").toLowerCase();
+  if (contentType.includes("application/json")) {
+    try {
+      return await req.json();
+    } catch (err) {
+      return null;
+    }
+  }
+
+  try {
+    return await req.formData();
+  } catch (err) {
+    if (!contentType) {
+      try {
+        return await req.json();
+      } catch (_) {}
+      try {
+        return await req.formData();
+      } catch (_) {}
+    }
+    return null;
+  }
+}
+
+function readField(data, key) {
+  if (!data) return "";
+  if (typeof data.get === "function") {
+    const value = data.get(key);
+    return typeof value === "string" ? value.trim() : "";
+  }
+  const value = data[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function esc(s = "") {
   return String(s).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;",
@@ -75,7 +110,18 @@ export async function POST(req) {
   const origin = req.headers.get("origin") || "";
   const headers = corsHeaders(origin);
 
-  const { first_name, last_name, email, message } = await req.json();
+  const body = await readBody(req);
+  if (!body) {
+    return NextResponse.json(
+      { msg: ["Invalid request body. Please submit the form again."] },
+      { status: 400, headers }
+    );
+  }
+
+  const first_name = readField(body, "first_name");
+  const last_name = readField(body, "last_name");
+  const email = readField(body, "email");
+  const message = readField(body, "message");
 
   console.log("first_name:", first_name);
   console.log("last_name:", last_name);
