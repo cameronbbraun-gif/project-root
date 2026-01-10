@@ -4,6 +4,15 @@ let cachedUri = '';
 
 let clientPromise;
 let mongoServerSelectionErrorClass;
+let mongoUnavailable = false;
+
+function isMissingMongoModule(err) {
+  const msg = err?.message || String(err || '');
+  return (
+    msg.includes("Cannot find module './explainable_cursor'") ||
+    msg.includes("Failed to load external module mongodb")
+  );
+}
 
 function getMongoUri() {
   return process.env.MONGODB_URI || '';
@@ -66,6 +75,19 @@ export async function getDb() {
       console.error('[mongo] server selection error:', raw, hint);
     }
     throw err;
+  }
+}
+
+export async function getDbSafe() {
+  if (mongoUnavailable) return null;
+  try {
+    return await getDb();
+  } catch (err) {
+    if (isMissingMongoModule(err)) {
+      mongoUnavailable = true;
+    }
+    console.error('[mongo] getDb failed:', err?.message || err);
+    return null;
   }
 }
 

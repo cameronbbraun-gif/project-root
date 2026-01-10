@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { readFile } from "fs/promises";
 import React from "react";
 import { render } from "@react-email/render";
-import { getDb } from "@/lib/mongodb";
+import { getDbSafe } from "@/lib/mongodb";
 import { resend, esc } from "@/lib/resend";
 import { renderInvoiceHtml } from "@/app/template/invoice";
 import BookingConfirmationEmail from "@/email/template/bookingconfirmationemail";
@@ -327,7 +327,11 @@ export async function GET(req) {
   const toKey = formatDateKey(toDate);
 
   try {
-    const db = await getDb();
+    const db = await getDbSafe();
+    if (!db) {
+      console.warn("[bookings] db unavailable; returning empty events");
+      return NextResponse.json({ ok: true, events: [] }, { status: 200, headers });
+    }
     const bookings = await db
       .collection("bookings")
       .find({
@@ -423,7 +427,8 @@ export async function POST(req) {
     ownerEmail: process.env.RESEND_OWNER_EMAIL || "",
   });
 
-    const doc = {
+  const now = new Date();
+  const doc = {
       reference: reference || null,
       customer: {
         name: customer.name || "",
@@ -459,41 +464,55 @@ export async function POST(req) {
       instructions: payload?.notes?.instructions || "",
     },
     paymentIntentId: paymentIntentId || null,
-    updatedAt: new Date(),
+    updatedAt: now,
   };
 
   try {
-    const db = await getDb();
-    const lookup = paymentIntentId ? { paymentIntentId } : { reference };
-    const now = new Date();
-    const result = await db.collection("bookings").findOneAndUpdate(
-      lookup,
-      {
-        $set: doc,
-        $setOnInsert: {
-          createdAt: now,
-          emailSent: false,
-          emailStatus: { customer: "pending", owner: "pending" },
-        },
-      },
-      { upsert: true, returnDocument: "after" }
-    );
+    const db = await getDbSafe();
+    let booking = null;
 
-    let booking = result?.value;
-    if (!booking) {
-      // Some driver versions ignore returnDocument; fetch explicitly.
-      booking = await db.collection("bookings").findOne(lookup);
-      if (booking) {
-        logDebug(debug, "booking fetched after upsert", {
-          id: booking?._id,
+    if (db) {
+      try {
+        const lookup = paymentIntentId ? { paymentIntentId } : { reference };
+        const result = await db.collection("bookings").findOneAndUpdate(
           lookup,
-        });
+          {
+            $set: doc,
+            $setOnInsert: {
+              createdAt: now,
+              emailSent: false,
+              emailStatus: { customer: "pending", owner: "pending" },
+            },
+          },
+          { upsert: true, returnDocument: "after" }
+        );
+
+        booking = result?.value;
+        if (!booking) {
+          // Some driver versions ignore returnDocument; fetch explicitly.
+          booking = await db.collection("bookings").findOne(lookup);
+          if (booking) {
+            logDebug(debug, "booking fetched after upsert", {
+              id: booking?._id,
+              lookup,
+            });
+          }
+        }
+      } catch (dbErr) {
+        console.error("[bookings] db upsert failed:", dbErr);
+        logDebug(debug, "db upsert failed");
       }
+    } else {
+      logDebug(debug, "db unavailable; using payload fallback");
     }
 
     if (!booking) {
-      flushDebug(debug, "debug (no booking value)");
-      return NextResponse.json({ ok: true, debug }, { status: 200, headers });
+      booking = {
+        ...doc,
+        createdAt: now,
+        emailSent: false,
+        emailStatus: { customer: "pending", owner: "pending" },
+      };
     }
 
     const emailStatus = {
@@ -697,17 +716,19 @@ export async function POST(req) {
         (!customerEmail || nextStatus.customer === "sent") &&
         (!ownerEmail || nextStatus.owner === "sent");
 
-      await db.collection("bookings").updateOne(
-        { _id: booking._id },
-        {
-          $set: {
-            emailStatus: nextStatus,
-            emailSent: allSent,
-            emailAttemptedAt: new Date(),
-            ...(allSent ? { emailSentAt: new Date() } : {}),
-          },
-        }
-      );
+      if (db && booking?._id) {
+        await db.collection("bookings").updateOne(
+          { _id: booking._id },
+          {
+            $set: {
+              emailStatus: nextStatus,
+              emailSent: allSent,
+              emailAttemptedAt: new Date(),
+              ...(allSent ? { emailSentAt: new Date() } : {}),
+            },
+          }
+        );
+      }
 
       logDebug(emailDebug, "email send results", { nextStatus, allSent });
       return { nextStatus, allSent };

@@ -14,6 +14,12 @@ export default function WebflowScripts() {
     jq.onload = () => {
       (window as any).jQuery = (window as any).jQuery || (window as any).$;
 
+      document.querySelectorAll(".w-form form").forEach((form) => {
+        if (!form.getAttribute("action")) {
+          form.setAttribute("action", "#");
+        }
+      });
+
       const wf = document.createElement("script");
       wf.src = "/js/webflow.js";
       wf.async = false;

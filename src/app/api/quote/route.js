@@ -23,7 +23,7 @@ export async function OPTIONS(req) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(allow) });
 }
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDbSafe } from "@/lib/mongodb";
 
 import { resend } from "@/lib/resend";
 import React from "react";
@@ -146,8 +146,18 @@ export async function POST(req) {
     };
 
     // 1) Save to Mongo
-    const db = await getDb();
-    const { insertedId } = await db.collection("quotes").insertOne(doc);
+    const db = await getDbSafe();
+    let insertedId = null;
+    if (db) {
+      try {
+        const result = await db.collection("quotes").insertOne(doc);
+        insertedId = result?.insertedId || null;
+      } catch (dbErr) {
+        console.error("[quote] db insert failed:", dbErr);
+      }
+    } else {
+      console.warn("[quote] db unavailable; skipping insert");
+    }
 
     // 2) Send notification to owner
     const ownerHtml = `
@@ -168,7 +178,7 @@ export async function POST(req) {
               .join("<br>")}</p>`
           : ""
       }
-      <p><em>Quote ID:</em> ${insertedId}</p>
+      <p><em>Quote ID:</em> ${insertedId || "(not saved)"}</p>
     `;
     let ownerSend;
     if (EMAIL_FROM && EMAIL_TO_OWNER) {
@@ -216,7 +226,7 @@ export async function POST(req) {
       customerEmail: (email && EMAIL_FROM) ? (typeof customerSend !== 'undefined' ? customerSend : null) : null,
     };
     return NextResponse.json(
-      { ok: true, id: String(insertedId), ...diag },
+      { ok: true, id: insertedId ? String(insertedId) : null, ...diag },
       { status: 200, headers: corsHeaders(allow) }
     );
   } catch (err) {

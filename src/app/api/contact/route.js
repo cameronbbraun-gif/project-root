@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDbSafe } from "@/lib/mongodb";
 import ContactEmail from "@/email/template/contactemail";
 
 export const runtime = "nodejs";
@@ -153,18 +153,26 @@ export async function POST(req) {
   }
 
   try {
-    const db = await getDb();
-    const now = new Date();
-    await db.collection("contacts").insertOne({
-      first_name,
-      last_name,
-      email,
-      message,
-      createdAt: now,
-      updatedAt: now,
-      ip: req.headers.get("x-forwarded-for") || "unknown",
-      ua: req.headers.get("user-agent") || "unknown",
-    });
+    const db = await getDbSafe();
+    if (db) {
+      const now = new Date();
+      try {
+        await db.collection("contacts").insertOne({
+          first_name,
+          last_name,
+          email,
+          message,
+          createdAt: now,
+          updatedAt: now,
+          ip: req.headers.get("x-forwarded-for") || "unknown",
+          ua: req.headers.get("user-agent") || "unknown",
+        });
+      } catch (dbErr) {
+        console.error("[contact] db insert failed:", dbErr);
+      }
+    } else {
+      console.warn("[contact] db unavailable; skipping insert");
+    }
 
     const ownerEmail = process.env.RESEND_OWNER_EMAIL;
 
