@@ -68,8 +68,8 @@ if (isNextLocal) {
   API_BASE = "http://localhost:3000";
   IMG_BASE = "http://localhost:3000";
 } else if (isProduction) {
-  API_BASE = "https://detailgeeksautospa.com";
-  IMG_BASE = "https://detailgeeksautospa.com";
+  API_BASE = window.location.origin;
+  IMG_BASE = window.location.origin;
 } else {
   API_BASE = "http://localhost:3000";
   IMG_BASE = "http://localhost:3000";

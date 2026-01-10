@@ -79,7 +79,7 @@ export function initContactForm() {
 
     const endpoint =
       form.getAttribute("action") ||
-      "https://detailgeeksautospa.com/api/contact";
+      `${window.location.origin}/api/contact`;
 
     try {
       const res = await fetch(endpoint, {
