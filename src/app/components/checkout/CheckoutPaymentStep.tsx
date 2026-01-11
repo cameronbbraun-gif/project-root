@@ -11,7 +11,10 @@ import {
   clearBookingFormState,
   generateBookingReference,
   getBookingPaymentSummary,
+  clearPendingBookingSummary,
   persistLatestBookingSummary,
+  persistPendingBookingSummary,
+  readPendingBooking,
   saveBookingFormState,
   validateBookingForPayment,
 } from "@/app/book/book";
@@ -35,6 +38,8 @@ function CheckoutPaymentStepInner() {
   const stripe = useStripe();
   const elements = useElements();
   const processingRef = useRef(false);
+  const pendingRef = useRef<{ reference: string; summary: BookingPaymentSummary } | null>(null);
+  const redirectHandledRef = useRef(false);
 
   const [summary, setSummary] = useState<BookingPaymentSummary | null>(null);
   const [billingAddress, setBillingAddress] = useState<ServiceAddress>({
@@ -80,6 +85,75 @@ function CheckoutPaymentStepInner() {
     }
   }, [termsAccepted, message]);
 
+  useEffect(() => {
+    if (!stripe || redirectHandledRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    const clientSecret = params.get("payment_intent_client_secret");
+    const redirectStatus = params.get("redirect_status");
+
+    if (!clientSecret && !redirectStatus) return;
+    redirectHandledRef.current = true;
+
+    const pending = readPendingBooking();
+    if (pending?.summary && !summary) {
+      setSummary(pending.summary);
+    }
+
+    const cleanUrl = () => {
+      ["payment_intent_client_secret", "payment_intent", "redirect_status"].forEach((key) =>
+        params.delete(key)
+      );
+      window.history.replaceState({}, "", url.toString());
+    };
+
+    const finalize = async () => {
+      if (!clientSecret) {
+        cleanUrl();
+        return;
+      }
+
+      try {
+        setIsProcessing(true);
+        setMessage("");
+        setSuccessMessage("Confirming your payment...");
+
+        const result = await stripe.retrievePaymentIntent(clientSecret);
+        const paymentIntent = result.paymentIntent;
+
+        if (!paymentIntent) {
+          throw new Error("Unable to confirm payment. Please contact support.");
+        }
+
+        if (paymentIntent.status === "succeeded") {
+          await handlePaymentSuccess(
+            paymentIntent.id,
+            pending?.reference,
+            pending?.summary
+          );
+        } else if (paymentIntent.status === "processing") {
+          setSuccessMessage("Your payment is processing. We'll email you shortly.");
+        } else {
+          const statusMsg =
+            paymentIntent.status === "requires_payment_method"
+              ? "Payment failed. Please try another card."
+              : "Payment could not be confirmed. Please contact support.";
+          handlePaymentFailure(statusMsg);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unable to confirm payment.";
+        handlePaymentFailure(msg);
+      } finally {
+        setIsProcessing(false);
+        cleanUrl();
+      }
+    };
+
+    void finalize();
+  }, [stripe, summary, handlePaymentSuccess, handlePaymentFailure]);
+
   const billingDetails = useMemo(
     () => ({
       name: summary?.customerName || "",
@@ -105,6 +179,18 @@ function CheckoutPaymentStepInner() {
     if (!summary) return 0;
     return Math.max(summary.balance - discountAmount, 0);
   }, [summary, discountAmount]);
+
+  const buildSummaryWithPromo = useCallback(
+    (baseSummary: BookingPaymentSummary): BookingPaymentSummary => ({
+      ...baseSummary,
+      discountPercent: appliedPromo?.percentOff,
+      discountAmount: appliedPromo ? Number(discountAmount.toFixed(2)) : undefined,
+      discountedBalance: appliedPromo ? Number(discountedBalance.toFixed(2)) : undefined,
+      promotionCode: appliedPromo?.code,
+      promotionCodeId: appliedPromo?.promotionCodeId,
+    }),
+    [appliedPromo, discountAmount, discountedBalance]
+  );
 
   const formatCurrency = useCallback((amount: number) => `$${amount.toFixed(2)}`, []);
 
@@ -182,6 +268,21 @@ function CheckoutPaymentStepInner() {
     setPromoMessage("Promo code removed.");
   }, []);
 
+  const preparePayment = useCallback(() => {
+    if (!summary) {
+      throw new Error("Booking details are missing. Please review your selections.");
+    }
+
+    const reference = pendingRef.current?.reference || generateBookingReference();
+    const summaryWithPromo = buildSummaryWithPromo(summary);
+
+    pendingRef.current = { reference, summary: summaryWithPromo };
+    persistPendingBookingSummary(summaryWithPromo, reference);
+    saveBookingFormState();
+
+    return { reference, summary: summaryWithPromo };
+  }, [summary, buildSummaryWithPromo, saveBookingFormState]);
+
   const createPaymentIntent = useCallback(async () => {
     const valid = await validateBookingForPayment();
     if (!valid) {
@@ -233,45 +334,63 @@ function CheckoutPaymentStepInner() {
   }, [summary, appliedPromo, discountAmount, discountedBalance]);
 
   const saveBooking = useCallback(
-    async (reference: string, paymentIntentId?: string) => {
-      if (!summary) {
+    async (
+      reference: string,
+      paymentIntentId?: string,
+      summaryOverride?: BookingPaymentSummary
+    ) => {
+      const activeSummary = summaryOverride || summary;
+      if (!activeSummary) {
         throw new Error("Booking details are missing. Please review your selections.");
       }
+
+      const pricingDiscountPercent =
+        summaryOverride?.discountPercent ?? appliedPromo?.percentOff ?? null;
+      const pricingDiscountAmount =
+        summaryOverride?.discountAmount ??
+        (appliedPromo ? Number(discountAmount.toFixed(2)) : null);
+      const pricingDiscountedBalance =
+        summaryOverride?.discountedBalance ??
+        (appliedPromo ? Number(discountedBalance.toFixed(2)) : null);
+      const pricingPromotionCode =
+        summaryOverride?.promotionCode || appliedPromo?.code || "";
+      const pricingPromotionCodeId =
+        summaryOverride?.promotionCodeId || appliedPromo?.promotionCodeId || "";
 
       const payload = {
         reference,
         customer: {
-          name: summary.customerName,
-          email: summary.email,
-          phone: summary.phone,
+          name: activeSummary.customerName,
+          email: activeSummary.email,
+          phone: activeSummary.phone,
         },
         service: {
-          packageName: summary.packageName,
-          packagePrice: summary.packagePrice,
-          addons: summary.addons,
-          addonDetails: summary.addonDetails,
-          vehicleLine: summary.vehicleLine,
-          serviceAddress: summary.serviceAddress,
+          packageName: activeSummary.packageName,
+          packagePrice: activeSummary.packagePrice,
+          addons: activeSummary.addons,
+          addonDetails: activeSummary.addonDetails,
+          vehicleLine: activeSummary.vehicleLine,
+          serviceAddress: activeSummary.serviceAddress,
         },
         schedule: {
-          dateTimeText: summary.dateTimeText,
-          date: summary.selectedDate || "",
-          time: summary.selectedTime || "",
-          durationMinutes: summary.durationMinutes ?? null,
+          dateTimeText: activeSummary.dateTimeText,
+          date: activeSummary.selectedDate || "",
+          time: activeSummary.selectedTime || "",
+          durationMinutes: activeSummary.durationMinutes ?? null,
         },
         pricing: {
-          total: summary.total,
-          deposit: summary.deposit,
-          balance: summary.balance,
-          addonPrices: summary.addonPrices,
-          discountPercent: appliedPromo?.percentOff ?? null,
-          discountAmount: appliedPromo ? Number(discountAmount.toFixed(2)) : null,
-          discountedBalance: appliedPromo ? Number(discountedBalance.toFixed(2)) : null,
-          promotionCode: appliedPromo?.code || "",
-          promotionCodeId: appliedPromo?.promotionCodeId || "",
+          total: activeSummary.total,
+          deposit: activeSummary.deposit,
+          balance: activeSummary.balance,
+          addonPrices: activeSummary.addonPrices,
+          discountPercent: pricingDiscountPercent,
+          discountAmount: pricingDiscountAmount,
+          discountedBalance: pricingDiscountedBalance,
+          promotionCode: pricingPromotionCode,
+          promotionCodeId: pricingPromotionCodeId,
         },
         notes: {
-          instructions: summary.additionalInstructions || "",
+          instructions: activeSummary.additionalInstructions || "",
         },
         paymentIntentId: paymentIntentId || null,
       };
@@ -290,25 +409,29 @@ function CheckoutPaymentStepInner() {
   );
 
   const handlePaymentSuccess = useCallback(
-    async (paymentIntentId?: string) => {
-      const reference = generateBookingReference();
-      if (summary) {
-        const summaryWithPromo = {
-          ...summary,
-          discountPercent: appliedPromo?.percentOff,
-          discountAmount: appliedPromo ? Number(discountAmount.toFixed(2)) : undefined,
-          discountedBalance: appliedPromo ? Number(discountedBalance.toFixed(2)) : undefined,
-          promotionCode: appliedPromo?.code,
-          promotionCodeId: appliedPromo?.promotionCodeId,
-        };
-        persistLatestBookingSummary(summaryWithPromo, reference);
+    async (
+      paymentIntentId?: string,
+      referenceOverride?: string,
+      summaryOverride?: BookingPaymentSummary
+    ) => {
+      const pending = pendingRef.current || readPendingBooking();
+      const baseSummary = summaryOverride || pending?.summary || summary;
+      if (!baseSummary) {
+        throw new Error("Booking details are missing. Please review your selections.");
       }
+
+      const reference = referenceOverride || pending?.reference || generateBookingReference();
+      const summaryWithPromo = summaryOverride || buildSummaryWithPromo(baseSummary);
+
+      persistLatestBookingSummary(summaryWithPromo, reference);
       setMessage("");
       setSuccessMessage("Saving your booking...");
 
       try {
-        await saveBooking(reference, paymentIntentId);
+        await saveBooking(reference, paymentIntentId, summaryWithPromo);
         setSuccessMessage("Booking saved! Redirecting...");
+        clearPendingBookingSummary();
+        pendingRef.current = null;
         setTimeout(() => {
           clearBookingFormState();
           window.location.href = "/book/booking-success";
@@ -319,7 +442,13 @@ function CheckoutPaymentStepInner() {
         saveBookingFormState();
       }
     },
-    [clearBookingFormState, saveBooking, saveBookingFormState, summary]
+    [
+      buildSummaryWithPromo,
+      clearBookingFormState,
+      saveBooking,
+      saveBookingFormState,
+      summary,
+    ]
   );
 
   const handlePaymentFailure = useCallback(
@@ -362,6 +491,7 @@ function CheckoutPaymentStepInner() {
     setMessage("");
 
     try {
+      const pending = preparePayment();
       const intent = await createPaymentIntent();
       if (!intent?.clientSecret) {
         throw new Error("Unable to start payment right now. Please try again.");
@@ -376,13 +506,18 @@ function CheckoutPaymentStepInner() {
           card,
           billing_details: billingDetails,
         },
+        return_url: `${window.location.origin}/book`,
       });
 
       if (error) {
         throw new Error(error.message ?? "Payment failed. Please try another card.");
       }
 
-      await handlePaymentSuccess(paymentIntent?.id || fallbackIntentId);
+      await handlePaymentSuccess(
+        paymentIntent?.id || fallbackIntentId,
+        pending?.reference,
+        pending?.summary
+      );
     } catch (err) {
       const friendlyMessage = err instanceof Error ? err.message : "Payment failed. Please try again.";
       handlePaymentFailure(friendlyMessage);
@@ -399,6 +534,7 @@ function CheckoutPaymentStepInner() {
     billingDetails,
     handlePaymentSuccess,
     handlePaymentFailure,
+    preparePayment,
   ]);
 
   const depositDisplay =
@@ -552,6 +688,7 @@ function CheckoutPaymentStepInner() {
           <div className="wallet-section">
             <WalletButtons
               amount={summary?.deposit ?? 0}
+              onPreparePayment={preparePayment}
               createPaymentIntent={createPaymentIntent}
               onPaymentSuccess={handlePaymentSuccess}
               onError={(msg) => setMessage(msg)}

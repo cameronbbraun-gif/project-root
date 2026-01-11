@@ -86,6 +86,7 @@ declare global {
 const FORM_STORAGE_KEY = "dg-booking-form-state";
 const USED_REF_STORAGE_KEY = "dg-booking-used-refs";
 const LATEST_BOOKING_KEY = "dg-latest-booking";
+const PENDING_BOOKING_KEY = "dg-pending-booking";
 
 type PersistedValue = string | boolean;
 interface PersistedPayload {
@@ -333,6 +334,23 @@ export function persistLatestBookingSummary(summary: BookingPaymentSummary, refe
   }
 }
 
+export function persistPendingBookingSummary(summary: BookingPaymentSummary, reference: string) {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(
+      PENDING_BOOKING_KEY,
+      JSON.stringify({
+        reference,
+        summary,
+        timestamp: Date.now(),
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
 export function readLatestBooking(): { reference: string; summary: BookingPaymentSummary } | null {
   const storage = getTransientStorage();
   if (!storage) return null;
@@ -342,6 +360,28 @@ export function readLatestBooking(): { reference: string; summary: BookingPaymen
     return JSON.parse(raw) as { reference: string; summary: BookingPaymentSummary };
   } catch {
     return null;
+  }
+}
+
+export function readPendingBooking(): { reference: string; summary: BookingPaymentSummary } | null {
+  const storage = getTransientStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(PENDING_BOOKING_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as { reference: string; summary: BookingPaymentSummary };
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingBookingSummary() {
+  const storage = getTransientStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(PENDING_BOOKING_KEY);
+  } catch {
+    // ignore
   }
 }
 

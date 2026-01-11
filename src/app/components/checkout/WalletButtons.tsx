@@ -9,6 +9,7 @@ import type {
 
 interface WalletButtonsProps {
   amount: number;
+  onPreparePayment?: () => void;
   createPaymentIntent: () => Promise<{ clientSecret?: string; paymentIntentId?: string } | null>;
   onPaymentSuccess: (paymentIntentId?: string) => void | Promise<void>;
   onError: (message: string) => void;
@@ -28,6 +29,7 @@ const paymentButtonStyle = {
 
 export default function WalletButtons({
   amount,
+  onPreparePayment,
   createPaymentIntent,
   onPaymentSuccess,
   onError,
@@ -42,6 +44,7 @@ export default function WalletButtons({
   const paymentHandlerRef = useRef<((event: PaymentRequestPaymentMethodEvent) => void) | null>(null);
   const latestCallbacksRef = useRef({
     termsAccepted,
+    onPreparePayment,
     createPaymentIntent,
     onError,
     onPaymentFailure,
@@ -53,6 +56,7 @@ export default function WalletButtons({
   useEffect(() => {
     latestCallbacksRef.current = {
       termsAccepted,
+      onPreparePayment,
       createPaymentIntent,
       onError,
       onPaymentFailure,
@@ -60,7 +64,7 @@ export default function WalletButtons({
       onPaymentSuccess,
       disabled,
     };
-  }, [termsAccepted, createPaymentIntent, onError, onPaymentFailure, onProcessingChange, onPaymentSuccess, disabled]);
+  }, [termsAccepted, onPreparePayment, createPaymentIntent, onError, onPaymentFailure, onProcessingChange, onPaymentSuccess, disabled]);
 
   useEffect(() => {
     const teardown = () => {
@@ -101,6 +105,7 @@ export default function WalletButtons({
         createPaymentIntent: latestCreatePaymentIntent,
         onPaymentSuccess: latestOnPaymentSuccess,
         disabled: latestDisabled,
+        onPreparePayment: latestOnPreparePayment,
       } = latestCallbacksRef.current;
 
       if (latestDisabled) {
@@ -118,6 +123,7 @@ export default function WalletButtons({
       try {
         latestOnProcessingChange?.(true);
         latestOnError("");
+        latestOnPreparePayment?.();
 
         const res = await latestCreatePaymentIntent();
         const clientSecret = res?.clientSecret;
@@ -132,14 +138,17 @@ export default function WalletButtons({
           return;
         }
 
-        const { error, paymentIntent } = await stripeClient.confirmCardPayment(
+        const confirmResult = await stripeClient.confirmCardPayment(
           clientSecret,
-          { payment_method: event.paymentMethod.id },
-          { handleActions: true }
+          {
+            payment_method: event.paymentMethod.id,
+            return_url: `${window.location.origin}/book`,
+          },
+          { handleActions: false }
         );
 
-        if (error) {
-          const message = error.message ?? "Payment failed. Please try another method.";
+        if (confirmResult.error) {
+          const message = confirmResult.error.message ?? "Payment failed. Please try another method.";
           latestOnError(message);
           latestOnPaymentFailure?.(message);
           event.complete("fail");
@@ -147,6 +156,22 @@ export default function WalletButtons({
         }
 
         event.complete("success");
+
+        let paymentIntent = confirmResult.paymentIntent;
+        if (paymentIntent?.status === "requires_action") {
+          const actionResult = await stripeClient.confirmCardPayment(clientSecret, {
+            return_url: `${window.location.origin}/book`,
+          });
+          if (actionResult.error) {
+            const message =
+              actionResult.error.message ?? "Payment failed. Please try another method.";
+            latestOnError(message);
+            latestOnPaymentFailure?.(message);
+            return;
+          }
+          paymentIntent = actionResult.paymentIntent;
+        }
+
         await latestOnPaymentSuccess(paymentIntent?.id || fallbackIntentId);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Payment failed. Please try again.";
