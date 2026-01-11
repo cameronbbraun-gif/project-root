@@ -85,75 +85,6 @@ function CheckoutPaymentStepInner() {
     }
   }, [termsAccepted, message]);
 
-  useEffect(() => {
-    if (!stripe || redirectHandledRef.current) return;
-    if (typeof window === "undefined") return;
-
-    const url = new URL(window.location.href);
-    const params = url.searchParams;
-    const clientSecret = params.get("payment_intent_client_secret");
-    const redirectStatus = params.get("redirect_status");
-
-    if (!clientSecret && !redirectStatus) return;
-    redirectHandledRef.current = true;
-
-    const pending = readPendingBooking();
-    if (pending?.summary && !summary) {
-      setSummary(pending.summary);
-    }
-
-    const cleanUrl = () => {
-      ["payment_intent_client_secret", "payment_intent", "redirect_status"].forEach((key) =>
-        params.delete(key)
-      );
-      window.history.replaceState({}, "", url.toString());
-    };
-
-    const finalize = async () => {
-      if (!clientSecret) {
-        cleanUrl();
-        return;
-      }
-
-      try {
-        setIsProcessing(true);
-        setMessage("");
-        setSuccessMessage("Confirming your payment...");
-
-        const result = await stripe.retrievePaymentIntent(clientSecret);
-        const paymentIntent = result.paymentIntent;
-
-        if (!paymentIntent) {
-          throw new Error("Unable to confirm payment. Please contact support.");
-        }
-
-        if (paymentIntent.status === "succeeded") {
-          await handlePaymentSuccess(
-            paymentIntent.id,
-            pending?.reference,
-            pending?.summary
-          );
-        } else if (paymentIntent.status === "processing") {
-          setSuccessMessage("Your payment is processing. We'll email you shortly.");
-        } else {
-          const statusMsg =
-            paymentIntent.status === "requires_payment_method"
-              ? "Payment failed. Please try another card."
-              : "Payment could not be confirmed. Please contact support.";
-          handlePaymentFailure(statusMsg);
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unable to confirm payment.";
-        handlePaymentFailure(msg);
-      } finally {
-        setIsProcessing(false);
-        cleanUrl();
-      }
-    };
-
-    void finalize();
-  }, [stripe, summary, handlePaymentSuccess, handlePaymentFailure]);
-
   const billingDetails = useMemo(
     () => ({
       name: summary?.customerName || "",
@@ -536,6 +467,75 @@ function CheckoutPaymentStepInner() {
     handlePaymentFailure,
     preparePayment,
   ]);
+
+  useEffect(() => {
+    if (!stripe || redirectHandledRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    const clientSecret = params.get("payment_intent_client_secret");
+    const redirectStatus = params.get("redirect_status");
+
+    if (!clientSecret && !redirectStatus) return;
+    redirectHandledRef.current = true;
+
+    const pending = readPendingBooking();
+    if (pending?.summary && !summary) {
+      setSummary(pending.summary);
+    }
+
+    const cleanUrl = () => {
+      ["payment_intent_client_secret", "payment_intent", "redirect_status"].forEach((key) =>
+        params.delete(key)
+      );
+      window.history.replaceState({}, "", url.toString());
+    };
+
+    const finalize = async () => {
+      if (!clientSecret) {
+        cleanUrl();
+        return;
+      }
+
+      try {
+        setIsProcessing(true);
+        setMessage("");
+        setSuccessMessage("Confirming your payment...");
+
+        const result = await stripe.retrievePaymentIntent(clientSecret);
+        const paymentIntent = result.paymentIntent;
+
+        if (!paymentIntent) {
+          throw new Error("Unable to confirm payment. Please contact support.");
+        }
+
+        if (paymentIntent.status === "succeeded") {
+          await handlePaymentSuccess(
+            paymentIntent.id,
+            pending?.reference,
+            pending?.summary
+          );
+        } else if (paymentIntent.status === "processing") {
+          setSuccessMessage("Your payment is processing. We'll email you shortly.");
+        } else {
+          const statusMsg =
+            paymentIntent.status === "requires_payment_method"
+              ? "Payment failed. Please try another card."
+              : "Payment could not be confirmed. Please contact support.";
+          handlePaymentFailure(statusMsg);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unable to confirm payment.";
+        handlePaymentFailure(msg);
+      } finally {
+        setIsProcessing(false);
+        cleanUrl();
+      }
+    };
+
+    void finalize();
+  }, [stripe, summary, handlePaymentSuccess, handlePaymentFailure]);
 
   const depositDisplay =
     summary?.deposit != null ? `$${summary.deposit.toFixed(2)}` : "—";
