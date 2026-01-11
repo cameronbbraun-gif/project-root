@@ -53,18 +53,16 @@ export default function WalletButtons({
     disabled,
   });
 
-  useEffect(() => {
-    latestCallbacksRef.current = {
-      termsAccepted,
-      onPreparePayment,
-      createPaymentIntent,
-      onError,
-      onPaymentFailure,
-      onProcessingChange,
-      onPaymentSuccess,
-      disabled,
-    };
-  }, [termsAccepted, onPreparePayment, createPaymentIntent, onError, onPaymentFailure, onProcessingChange, onPaymentSuccess, disabled]);
+  latestCallbacksRef.current = {
+    termsAccepted,
+    onPreparePayment,
+    createPaymentIntent,
+    onError,
+    onPaymentFailure,
+    onProcessingChange,
+    onPaymentSuccess,
+    disabled,
+  };
 
   useEffect(() => {
     const teardown = () => {
@@ -155,10 +153,16 @@ export default function WalletButtons({
           return;
         }
 
-        event.complete("success");
-
         let paymentIntent = confirmResult.paymentIntent;
-        if (paymentIntent?.status === "requires_action") {
+        if (!paymentIntent) {
+          const message = "Payment could not be confirmed. Please try again.";
+          latestOnError(message);
+          latestOnPaymentFailure?.(message);
+          event.complete("fail");
+          return;
+        }
+
+        if (paymentIntent.status === "requires_action") {
           const actionResult = await stripeClient.confirmCardPayment(clientSecret, {
             return_url: `${window.location.origin}/book`,
           });
@@ -167,12 +171,28 @@ export default function WalletButtons({
               actionResult.error.message ?? "Payment failed. Please try another method.";
             latestOnError(message);
             latestOnPaymentFailure?.(message);
+            event.complete("fail");
             return;
           }
-          paymentIntent = actionResult.paymentIntent;
+          if (actionResult.paymentIntent) {
+            paymentIntent = actionResult.paymentIntent;
+          }
         }
 
-        await latestOnPaymentSuccess(paymentIntent?.id || fallbackIntentId);
+        const finalStatus = paymentIntent.status;
+        if (finalStatus !== "succeeded" && finalStatus !== "processing") {
+          const message =
+            finalStatus === "requires_payment_method"
+              ? "Payment failed. Please try another method."
+              : "Payment could not be confirmed. Please try again.";
+          latestOnError(message);
+          latestOnPaymentFailure?.(message);
+          event.complete("fail");
+          return;
+        }
+
+        event.complete("success");
+        await latestOnPaymentSuccess(paymentIntent.id || fallbackIntentId);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Payment failed. Please try again.";
         latestOnError(message);

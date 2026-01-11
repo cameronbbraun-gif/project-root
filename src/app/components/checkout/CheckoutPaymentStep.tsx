@@ -40,6 +40,7 @@ function CheckoutPaymentStepInner() {
   const processingRef = useRef(false);
   const pendingRef = useRef<{ reference: string; summary: BookingPaymentSummary } | null>(null);
   const redirectHandledRef = useRef(false);
+  const termsErrorMessage = "Please agree to the terms before paying.";
 
   const [summary, setSummary] = useState<BookingPaymentSummary | null>(null);
   const [billingAddress, setBillingAddress] = useState<ServiceAddress>({
@@ -79,11 +80,6 @@ function CheckoutPaymentStepInner() {
     };
   }, [sameAsService]);
 
-  useEffect(() => {
-    if (termsAccepted && message) {
-      setMessage("");
-    }
-  }, [termsAccepted, message]);
 
   const billingDetails = useMemo(
     () => ({
@@ -403,7 +399,7 @@ function CheckoutPaymentStepInner() {
       return;
     }
     if (!termsAccepted) {
-      setMessage("Please agree to the terms before paying.");
+      setMessage(termsErrorMessage);
       return;
     }
     if (!summary || summary.deposit <= 0) {
@@ -691,7 +687,10 @@ function CheckoutPaymentStepInner() {
               onPreparePayment={preparePayment}
               createPaymentIntent={createPaymentIntent}
               onPaymentSuccess={handlePaymentSuccess}
-              onError={(msg) => setMessage(msg)}
+              onError={(msg) => {
+                setSuccessMessage("");
+                setMessage(msg);
+              }}
               onPaymentFailure={handlePaymentFailure}
               onProcessingChange={setIsProcessing}
               disabled={isProcessing}
@@ -726,7 +725,13 @@ function CheckoutPaymentStepInner() {
               id="terms-agree"
               name="terms-agree"
               checked={termsAccepted}
-              onChange={(event) => setTermsAccepted(event.target.checked)}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setTermsAccepted(next);
+                if (next && message === termsErrorMessage) {
+                  setMessage("");
+                }
+              }}
             />
             <span>
               I agree to the{" "}
