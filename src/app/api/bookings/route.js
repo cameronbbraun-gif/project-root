@@ -306,6 +306,27 @@ async function isPaymentSucceeded(paymentIntentId) {
   }
 }
 
+async function isPaymentActive(paymentIntentId) {
+  if (!paymentIntentId) return false;
+  if (!stripeClient) return true;
+  try {
+    const intent = await stripeClient.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["charges"],
+    });
+    if (!intent || intent.status !== "succeeded") return false;
+    const charges = intent.charges?.data || [];
+    if (!charges.length) return true;
+    return charges.some(
+      (charge) =>
+        !charge.refunded && (charge.amount_refunded ?? 0) < (charge.amount ?? 0)
+    );
+  } catch (err) {
+    console.error("[bookings] payment active check failed:", err);
+    // Fail closed to avoid double bookings when Stripe is unavailable.
+    return true;
+  }
+}
+
 export async function GET(req) {
   const origin = req.headers.get("origin") || "";
   const headers = corsHeaders(origin);
@@ -346,12 +367,26 @@ export async function GET(req) {
       .project({
         schedule: 1,
         service: 1,
+        paymentIntentId: 1,
       })
       .toArray();
 
     const events = [];
+    const paymentCache = new Map();
 
-    bookings.forEach((booking) => {
+    for (const booking of bookings) {
+      const paymentIntentId = booking?.paymentIntentId || "";
+      if (paymentIntentId) {
+        let paymentActive = paymentCache.get(paymentIntentId);
+        if (paymentActive === undefined) {
+          paymentActive = await isPaymentActive(paymentIntentId);
+          paymentCache.set(paymentIntentId, paymentActive);
+        }
+        if (!paymentActive) {
+          continue;
+        }
+      }
+
       const schedule = booking?.schedule || {};
       let dateKey = schedule.date;
       let time = schedule.time;
@@ -364,11 +399,11 @@ export async function GET(req) {
         }
       }
 
-      if (!dateKey || !time) return;
-      if (dateKey < fromKey || dateKey > toKey) return;
+      if (!dateKey || !time) continue;
+      if (dateKey < fromKey || dateKey > toKey) continue;
 
       const start = timeToMinutes(time);
-      if (!Number.isFinite(start)) return;
+      if (!Number.isFinite(start)) continue;
 
       let duration = Number(schedule.durationMinutes || 0);
       if (!duration || duration <= 0) {
@@ -377,7 +412,7 @@ export async function GET(req) {
       const end = start + duration;
 
       events.push({ date: dateKey, start, end });
-    });
+    }
 
     return NextResponse.json({ ok: true, events }, { status: 200, headers });
   } catch (err) {

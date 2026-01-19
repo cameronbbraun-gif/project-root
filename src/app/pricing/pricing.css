@@ -154,7 +154,7 @@ a.button-style-23 {
   }
 
   .flex-block-7 {
-    height: auto;
+    height: auto !important;
   }
 
   .div-block-20 {
@@ -164,5 +164,13 @@ a.button-style-23 {
   .team-rectangles-3 {
     height: auto !important;
     overflow: visible;
+  }
+
+  .team-rectangles-3 .actions-13 {
+    margin-top: 16px !important;
+  }
+
+  .team-rectangles-3 .button-style-22 {
+    margin-top: 16px !important;
   }
 }
