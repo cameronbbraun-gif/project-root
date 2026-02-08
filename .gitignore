@@ -1,5 +1,25 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+
 # dependencies
 /node_modules
 /.pnp
@@ -16,9 +36,12 @@
 # next.js
 /.next/
 /out/
+<<<<<<< HEAD
 /backend/.next/
 /frontend/.next/
 /admin/.next/
+=======
+>>>>>>> 9518c12 (Version 2.0)
 
 # production
 /build
@@ -42,4 +65,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+<<<<<<< HEAD
 node_modules
+=======
+>>>>>>> 9518c12 (Version 2.0)

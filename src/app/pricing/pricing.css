@@ -1,0 +1,176 @@
+.vehicle-option { 
+    position: relative;
+    cursor: pointer; 
+    transition: background-color .2s ease, box-shadow .2s ease, color .2s ease, transform .05s ease;
+    padding: 8px 10px;       /* spacing around inner square */
+  }
+  
+  .vehicle-option .button-style-18,
+  .vehicle-option .button-style-19 {
+    position: relative;      
+    z-index: 1;            
+  }
+  
+  .vehicle-option:hover .button-style-18,
+  .vehicle-option:hover .button-style-19 { 
+    background-color: #253346; 
+    color: #ffffff;
+  }
+  
+  .vehicle-option .button-style-18::after,
+  .vehicle-option .button-style-19::after {
+    content: "";
+    position: absolute;
+    inset: 0;                    /* ring hugs the square (no gap) */
+    border-radius: inherit;      /* exact same rounding */
+    pointer-events: none;
+    z-index: 0;                  /* behind inner content */
+    box-shadow: none;
+    transition: box-shadow .2s ease;
+  }
+  
+  /* Ensure icon (car) and label render above the inner square and ring */
+  .vehicle-option img,
+  .vehicle-option .text-75 {
+    position: relative;
+    z-index: 2;
+  }
+  
+  /* Keep labels readable on hover fill */
+  .vehicle-option:hover .text-75 {
+    color: #ffffff;
+  }
+  
+  /* If SVG/PNG car icons are dark, make them pop on dark hover */
+  .vehicle-option:hover img {
+    filter: invert(1);
+  }
+  
+  /* Show ring when selected or keyboard-focused */
+  .vehicle-option.vehicle-active .button-style-18::after,
+  .vehicle-option.vehicle-active .button-style-19::after,
+  .vehicle-option:focus-visible .button-style-18::after,
+  .vehicle-option:focus-visible .button-style-19::after {
+    box-shadow: 0 0 0 3px #3b82f6;
+  }
+  
+  /* Kill default browser outlines on the anchor inside */
+  .vehicle-option a:focus,
+  .vehicle-option a:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Keep the icon/text above the ring */
+  .vehicle-option .button-style-18 > *,
+  .vehicle-option .button-style-19 > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Keep icon and label colors fixed (no hover color change) */
+  .vehicle-option:hover .text-75 {
+    color: inherit;
+  }
+  
+.vehicle-option:hover img {
+    filter: none;
+}
+
+/* ===== Global hover effect for call-to-action buttons ===== */
+a.button-style-18:hover,
+a.button-style-19:hover,
+a.button-style-20:hover,
+a.button-style-21:hover,
+a.button-style-22:hover,
+a.button-style-23:hover {
+  background-color: #253346 !important;  /* same dark hover color */
+  color: #ffffff !important;
+  transform: scale(1.03);
+  transition: background-color .2s ease, color .2s ease, transform .15s ease;
+}
+
+a.button-style-18,
+a.button-style-19,
+a.button-style-20,
+a.button-style-21,
+a.button-style-22,
+a.button-style-23 {
+  transition: background-color .2s ease, color .2s ease, transform .15s ease;
+}
+
+/* Pricing card CTA alignment */
+.actions-13 {
+  width: 100% !important;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px !important;
+}
+
+.button-style-20,
+.button-style-21,
+.button-style-22 {
+  width: 100% !important;
+  max-width: 529px;
+  min-width: 0 !important;
+  margin-top: 0 !important;
+}
+
+@media screen and (min-width: 992px) {
+  .columns-8 {
+    align-items: stretch;
+  }
+
+  .card-4 {
+    height: 100%;
+  }
+
+  .info-4,
+  .info-5 {
+    height: auto;
+    flex: 1;
+  }
+
+  .actions-13 {
+    margin-top: auto !important;
+  }
+}
+
+@media screen and (max-width: 479px) {
+  .actions-13 {
+    margin-top: 8px !important;
+  }
+
+  .button-style-20,
+  .button-style-21,
+  .button-style-22 {
+    max-width: 100%;
+    margin-top: 0 !important;
+  }
+
+  .info-4,
+  .info-5 {
+    height: auto !important;
+  }
+
+  .flex-block-7 {
+    height: auto !important;
+  }
+
+  .div-block-20 {
+    width: 100% !important;
+  }
+
+  .team-rectangles-3 {
+    height: auto !important;
+    overflow: visible;
+  }
+
+  .team-rectangles-3 .actions-13 {
+    margin-top: 16px !important;
+  }
+
+  .team-rectangles-3 .button-style-22 {
+    margin-top: 16px !important;
+  }
+}
