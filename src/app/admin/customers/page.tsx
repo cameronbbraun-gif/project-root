@@ -53,10 +53,10 @@ export default function CustomersPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!active) return;
-        const list = Array.isArray(data?.customers) ? data.customers : [];
+        const list: any[] = Array.isArray(data?.customers) ? data.customers : [];
         setCustomers(list);
-        const vipCount = list.filter((c) => c.status === "VIP").length;
-        const repeat = list.filter((c) => c.bookingCount >= 2).length;
+        const vipCount = list.filter((c: any) => c.status === "VIP").length;
+        const repeat = list.filter((c: any) => c.bookingCount >= 2).length;
         const repeatRate = list.length ? Math.round((repeat / list.length) * 100) : 0;
         setStats({
           total: Number(data?.stats?.total || list.length),
