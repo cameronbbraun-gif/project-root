@@ -1,4 +1,5 @@
 import AdminLoginForm from "./ui";
+import { Suspense } from "react";
 
 export default function AdminLoginPage() {
   return (
@@ -11,7 +12,9 @@ export default function AdminLoginPage() {
         padding: "24px",
       }}
     >
-      <AdminLoginForm />
+      <Suspense fallback={<div />}>
+        <AdminLoginForm />
+      </Suspense>
     </div>
   );
 }
