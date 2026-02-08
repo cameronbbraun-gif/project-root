@@ -9,4 +9,7 @@ if (!JWT_SECRET) {
   throw new Error("Missing JWT_SECRET environment variable");
 }
 
-export { MONGODB_URI, JWT_SECRET };
+const MONGODB_URI_SAFE: string = MONGODB_URI;
+const JWT_SECRET_SAFE: string = JWT_SECRET;
+
+export { MONGODB_URI_SAFE as MONGODB_URI, JWT_SECRET_SAFE as JWT_SECRET };
