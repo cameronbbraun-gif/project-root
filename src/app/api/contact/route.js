@@ -211,6 +211,7 @@ export async function POST(req) {
   const last_name = readField(body, "last_name");
   const email = readField(body, "email");
   const message = readField(body, "message");
+  const website = readField(body, "website");
   const recaptchaToken = readField(body, "recaptchaToken");
 
   console.log("first_name:", first_name);
@@ -239,6 +240,14 @@ export async function POST(req) {
     return NextResponse.json(
       { msg: [`Missing fields: ${missing.join(", ")}`] },
       { status: 400, headers }
+    );
+  }
+
+  if (website) {
+    console.warn("[contact] honeypot triggered");
+    return NextResponse.json(
+      { msg: ["Message received. Thank you!"], success: true },
+      { headers }
     );
   }
 

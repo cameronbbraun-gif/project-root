@@ -276,6 +276,19 @@ export default function GetAQuotePage() {
                 ></textarea>
               </div>
 
+              <div className="quote-honeypot" aria-hidden="true">
+                <label htmlFor="website" className="form-block-label-3">Website</label>
+                <input
+                  className="form-text-input-3 w-input"
+                  maxLength={256}
+                  name="website"
+                  id="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               <div className="selectedfalse-alternatefalse quote-terms-row">
                 <label className="w-checkbox checkbox-field">
                   <div className="w-checkbox-input w-checkbox-input--inputType-custom checkbox-2"></div>

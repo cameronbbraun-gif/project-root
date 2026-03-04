@@ -244,6 +244,14 @@
   padding-bottom: 48px;
 }
 
+.quote-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .quote-terms-row {
   width: 100%;
   max-width: 768px;

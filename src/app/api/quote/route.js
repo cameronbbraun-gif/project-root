@@ -147,6 +147,7 @@ export async function POST(req) {
       ? origin
       : "https://detailgeeksautospa.com";
     const form = await req.formData();
+    const website = form.get("website");
     const recaptchaToken = form.get("recaptchaToken");
 
     // --- Basic server-side validation mirroring form "required" fields ---
@@ -170,6 +171,14 @@ export async function POST(req) {
       return NextResponse.json(
         { ok: false, error: 'Missing required fields', missing },
         { status: 400, headers: corsHeaders(allow) }
+      );
+    }
+
+    if (typeof website === "string" && website.trim()) {
+      console.warn("[quote] honeypot triggered");
+      return NextResponse.json(
+        { ok: true, id: null },
+        { status: 200, headers: corsHeaders(allow) }
       );
     }
 

@@ -144,6 +144,8 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
       ?.value?.trim() || "";
     const message = (form.querySelector('[name="message"]') as HTMLTextAreaElement)
       ?.value?.trim() || "";
+    const website = (form.querySelector('[name="website"]') as HTMLInputElement)
+      ?.value?.trim() || "";
     const termsAccepted = (form.querySelector('[name="terms"]') as HTMLInputElement)
       ?.checked || false;
 
@@ -152,6 +154,7 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
       last_name: last,
       email,
       message,
+      website,
     };
 
     const error: string[] = [];

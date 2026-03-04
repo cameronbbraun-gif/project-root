@@ -105,6 +105,18 @@ export default function ContactPage() {
                     <textarea className="form-textarea-2 w-input" id="message" name="message" placeholder="Share your thoughts..." required />
                   </div>
 
+                  <div className="contact-honeypot" aria-hidden="true">
+                    <label htmlFor="website" className="form-block-label-2">Website</label>
+                    <input
+                      className="form-text-input-2 w-input"
+                      name="website"
+                      id="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
                   <div className="w-checkbox checkbox-field contact-checkbox-field">
                     <div className="w-checkbox-input w-checkbox-input--inputType-custom checkbox-2"></div>
                     <input type="checkbox" name="terms" id="terms" required style={{ opacity: 0, position: "absolute", zIndex: -1 }} />
@@ -220,6 +232,14 @@ export default function ContactPage() {
 
         .contact-form-2 .contact-checkbox-field {
           align-items: flex-start;
+        }
+
+        .contact-form-2 .contact-honeypot {
+          position: absolute;
+          left: -9999px;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
         }
 
         .contact-form-2 .contact-checkbox-label {
