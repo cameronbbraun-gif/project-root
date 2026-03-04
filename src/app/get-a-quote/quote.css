@@ -242,6 +242,7 @@
 
 .contact-form-4 {
   padding-bottom: 48px;
+  overflow: visible !important;
 }
 
 .quote-honeypot {
@@ -299,6 +300,43 @@
   background-color: #32343a;
   cursor: wait;
   opacity: 1;
+}
+
+@media screen and (max-width: 767px) {
+  .contact-form-4,
+  .contact-form-4 .container-25,
+  .contact-form-4 .form-wrapper-4,
+  .contact-form-4 .form-style-5 {
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .contact-form-4 .form-style-5 {
+    align-items: stretch !important;
+    gap: 16px;
+  }
+
+  .contact-form-4 .input-5,
+  .contact-form-4 .input-6 {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 16px;
+  }
+
+  .contact-form-4 .input-wrapper-5,
+  .contact-form-4 .input-wrapper-6,
+  .contact-form-4 .form-text-input-3,
+  .contact-form-4 .form-text-input-5,
+  .contact-form-4 .textarea-wrapper-4,
+  .contact-form-4 .form-textarea-3,
+  .contact-form-4 .select-field,
+  .contact-form-4 .quote-terms-row,
+  .contact-form-4 .quote-recaptcha,
+  .contact-form-4 .form-button-2 {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
 }
 
 /* Minimal hover: darken only the radio circle (keeps original Webflow layout) */

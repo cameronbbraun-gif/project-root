@@ -260,11 +260,19 @@ export default function ContactPage() {
       </main>
       <style jsx global>{`
         .contact-form-2,
+        .contact-form-2 .content-style-17,
         .contact-form-2 .container-22,
         .contact-form-2 .form-wrapper-2,
         .contact-form-2 .form-style-3,
-        .contact-form-2 .textarea-wrapper-3 {
-          height: auto;
+        .contact-form-2 .textarea-wrapper-3,
+        .contact-form-2 .text-92 {
+          height: auto !important;
+          min-height: 0 !important;
+        }
+
+        .contact-form-2,
+        .contact-form-2 .content-style-17 {
+          overflow: visible !important;
         }
 
         .contact-form-2 .contact-checkbox-field {
@@ -312,8 +320,25 @@ export default function ContactPage() {
         }
 
         @media screen and (max-width: 767px) {
+          .contact-form-2 .content-style-17 {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 32px;
+          }
+
+          .contact-form-2 .container-22,
+          .contact-form-2 .section-title-4,
+          .contact-form-2 .form-wrapper-2,
+          .contact-form-2 .form-style-3,
+          .contact-form-2 .contact-recaptcha,
+          .contact-form-2 .submit-button-2 {
+            max-width: 100%;
+          }
+
           .contact-form-2 .input {
             max-width: 100%;
+            flex-direction: column;
+            gap: 16px;
           }
 
           .contact-form-2 .input-wrapper,
@@ -323,6 +348,10 @@ export default function ContactPage() {
           .contact-form-2 .textarea-wrapper-3,
           .contact-form-2 .form-textarea-2 {
             max-width: 100%;
+          }
+
+          .contact-form-2 .jan-vlacuha-u4iaokf5aj4-unsplash-2-1 {
+            display: none;
           }
         }
       `}</style>
