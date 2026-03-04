@@ -144,6 +144,8 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
       ?.value?.trim() || "";
     const message = (form.querySelector('[name="message"]') as HTMLTextAreaElement)
       ?.value?.trim() || "";
+    const csrfToken = (form.querySelector('[name="csrf_token"]') as HTMLInputElement)
+      ?.value?.trim() || "";
     const website = (form.querySelector('[name="website"]') as HTMLInputElement)
       ?.value?.trim() || "";
     const termsAccepted = (form.querySelector('[name="terms"]') as HTMLInputElement)
@@ -154,6 +156,7 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
       last_name: last,
       email,
       message,
+      csrf_token: csrfToken,
       website,
     };
 
@@ -171,6 +174,9 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
       }
     }
     if (!message) error.push("Message is required.");
+    if (!csrfToken) {
+      error.push("Security check is still loading. Please wait a moment and try again.");
+    }
     if (!termsAccepted) {
       error.push("Please accept the Terms of Service and Privacy Policy.");
     }
@@ -183,7 +189,7 @@ export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOption
         if (!recaptchaToken) {
           error.push("Please complete the reCAPTCHA challenge.");
         } else {
-          data.recaptchaToken = recaptchaToken;
+          data["g-recaptcha-response"] = recaptchaToken;
         }
       }
     }

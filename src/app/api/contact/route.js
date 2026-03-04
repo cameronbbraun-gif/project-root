@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDbSafe } from "@/lib/mongodb";
 import ContactEmail from "@/email/template/contactemail";
+import {
+  CONTACT_CSRF_COOKIE,
+  getRequestIp,
+  isAllowedContactOrigin,
+  tokensMatch,
+  validateSameOriginRequest,
+} from "@/lib/contact-security";
 
 export const runtime = "nodejs";
 
@@ -24,14 +31,6 @@ async function getContactDb() {
   const client = await overrideClientPromise;
   return client.db(CONTACT_DB_NAME);
 }
-
-const ALLOWED_ORIGINS = [
-  "http://localhost:3000",   
-  "http://127.0.0.1:5500", 
-  "http://localhost:5500",
-  "https://detailgeeksautospa.com",
-  "https://www.detailgeeksautospa.com",
-];
 
 async function readBody(req) {
   const contentType = (req.headers.get("content-type") || "").toLowerCase();
@@ -78,20 +77,9 @@ function esc(s = "") {
   })[c]);
 }
 
-function getRequestIp(req) {
-  const forwardedFor = req.headers.get("x-forwarded-for") || "";
-  return forwardedFor.split(",")[0]?.trim() || "";
-}
-
 async function verifyRecaptchaToken(token, req) {
   const siteKey = (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "").trim();
   const secret = (process.env.RECAPTCHA_SECRET_KEY || "").trim();
-  const recaptchaEnabled = Boolean(siteKey || secret);
-
-  if (!recaptchaEnabled) {
-    return { ok: true, skipped: true };
-  }
-
   if (!siteKey || !secret) {
     console.error("[contact] recaptcha misconfigured", {
       hasSiteKey: Boolean(siteKey),
@@ -107,7 +95,7 @@ async function verifyRecaptchaToken(token, req) {
   if (!token) {
     return {
       ok: false,
-      status: 400,
+      status: 403,
       message: "Please complete the reCAPTCHA challenge.",
     };
   }
@@ -140,12 +128,12 @@ async function verifyRecaptchaToken(token, req) {
     console.warn("[contact] recaptcha rejected:", payload?.["error-codes"] || []);
     return {
       ok: false,
-      status: 400,
+      status: 403,
       message: "reCAPTCHA verification failed. Please try again.",
     };
   }
 
-  return { ok: true, skipped: false };
+  return { ok: true };
 }
 
 async function sendResendEmail({ to, subject, html, replyTo }) {
@@ -181,7 +169,7 @@ async function sendResendEmail({ to, subject, html, replyTo }) {
 }
 
 function corsHeaders(origin) {
-  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : "http://localhost:3000";
+  const allow = isAllowedContactOrigin(origin) ? origin : "http://localhost:3000";
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -192,12 +180,33 @@ function corsHeaders(origin) {
 
 export async function OPTIONS(req) {
   const origin = req.headers.get("origin") || "";
+  if (!isAllowedContactOrigin(origin)) {
+    console.warn("[contact] rejected preflight origin", { origin });
+    return NextResponse.json(
+      { msg: ["Forbidden"] },
+      { status: 403, headers: { Vary: "Origin" } }
+    );
+  }
   return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
 }
 
 export async function POST(req) {
-  const origin = req.headers.get("origin") || "";
-  const headers = corsHeaders(origin);
+  const originCheck = validateSameOriginRequest(req);
+  const headers = originCheck.ok
+    ? corsHeaders(originCheck.origin)
+    : { Vary: "Origin" };
+
+  if (!originCheck.ok) {
+    console.warn("[contact] rejected same-origin check", {
+      source: originCheck.source,
+      value: originCheck.raw,
+      ip: getRequestIp(req) || "unknown",
+    });
+    return NextResponse.json(
+      { msg: ["Forbidden"] },
+      { status: 403, headers }
+    );
+  }
 
   const body = await readBody(req);
   if (!body) {
@@ -211,8 +220,11 @@ export async function POST(req) {
   const last_name = readField(body, "last_name");
   const email = readField(body, "email");
   const message = readField(body, "message");
+  const csrfToken = readField(body, "csrf_token");
   const website = readField(body, "website");
-  const recaptchaToken = readField(body, "recaptchaToken");
+  const recaptchaToken =
+    readField(body, "g-recaptcha-response") || readField(body, "recaptchaToken");
+  const csrfCookie = req.cookies?.get(CONTACT_CSRF_COOKIE)?.value || "";
 
   console.log("first_name:", first_name);
   console.log("last_name:", last_name);
@@ -243,11 +255,16 @@ export async function POST(req) {
     );
   }
 
-  if (website) {
-    console.warn("[contact] honeypot triggered");
+  if (!csrfToken || !tokensMatch(csrfToken, csrfCookie)) {
+    console.warn("[contact] rejected csrf token", {
+      hasBodyToken: Boolean(csrfToken),
+      hasCookieToken: Boolean(csrfCookie),
+      ip: getRequestIp(req) || "unknown",
+      origin: originCheck.origin,
+    });
     return NextResponse.json(
-      { msg: ["Message received. Thank you!"], success: true },
-      { headers }
+      { msg: ["Forbidden"] },
+      { status: 403, headers }
     );
   }
 
@@ -257,6 +274,17 @@ export async function POST(req) {
       return NextResponse.json(
         { msg: [recaptchaCheck.message] },
         { status: recaptchaCheck.status, headers }
+      );
+    }
+
+    if (website) {
+      console.warn("[contact] honeypot triggered", {
+        ip: getRequestIp(req) || "unknown",
+        origin: originCheck.origin,
+      });
+      return NextResponse.json(
+        { msg: ["Message received. Thank you!"], success: true },
+        { headers }
       );
     }
 
@@ -271,7 +299,7 @@ export async function POST(req) {
           message,
           createdAt: now,
           updatedAt: now,
-          ...(recaptchaCheck.skipped ? {} : { recaptchaVerifiedAt: now }),
+          recaptchaVerifiedAt: now,
           ip: getRequestIp(req) || "unknown",
           ua: req.headers.get("user-agent") || "unknown",
         });

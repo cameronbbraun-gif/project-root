@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { initContactForm } from "./contact";
@@ -10,10 +10,45 @@ import { initContactForm } from "./contact";
 export default function ContactPage() {
   const recaptchaSiteKey =
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "";
+  const [csrfToken, setCsrfToken] = useState("");
 
   useEffect(() => {
     initContactForm({ recaptchaSiteKey });
   }, [recaptchaSiteKey]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCsrfToken = async () => {
+      try {
+        const res = await fetch("/api/contact/csrf", {
+          method: "GET",
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+
+        if (!res.ok) {
+          throw new Error(`CSRF init failed (${res.status})`);
+        }
+
+        const payload = await res.json();
+        if (active) {
+          setCsrfToken(typeof payload?.csrfToken === "string" ? payload.csrfToken : "");
+        }
+      } catch (error) {
+        console.error("[contact] csrf init failed:", error);
+        if (active) {
+          setCsrfToken("");
+        }
+      }
+    };
+
+    void loadCsrfToken();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -104,6 +139,8 @@ export default function ContactPage() {
                     <label htmlFor="message" className="form-block-label-2">Message</label>
                     <textarea className="form-textarea-2 w-input" id="message" name="message" placeholder="Share your thoughts..." required />
                   </div>
+
+                  <input type="hidden" name="csrf_token" value={csrfToken} readOnly />
 
                   <div className="contact-honeypot" aria-hidden="true">
                     <label htmlFor="website" className="form-block-label-2">Website</label>
