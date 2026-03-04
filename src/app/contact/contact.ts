@@ -1,7 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+type InitContactFormOptions = {
+  recaptchaSiteKey?: string;
+};
+
+type ContactFormElement = HTMLFormElement & {
+  __dgContactHandler?: (e: Event) => void | Promise<void>;
+  __dgRecaptchaWidgetId?: number;
+};
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      render: (
+        container: string | HTMLElement,
+        parameters: {
+          sitekey: string;
+          size?: "normal" | "compact";
+          callback?: () => void;
+          "expired-callback"?: () => void;
+        }
+      ) => number;
+      getResponse: (widgetId?: number) => string;
+      reset: (widgetId?: number) => void;
+      ready: (callback: () => void) => void;
+    };
+  }
+}
+
 // This function is called from React (useEffect) in contact/page.tsx.
-export function initContactForm() {
+export function initContactForm({ recaptchaSiteKey = "" }: InitContactFormOptions = {}) {
   const form =
     document.getElementById("contact-form") ||
     document.getElementById("webflow-form") ||
@@ -14,6 +42,9 @@ export function initContactForm() {
     return;
   }
 
+  const contactForm = form as ContactFormElement;
+  const submitButton = form.querySelector('.submit-button-2') as HTMLInputElement | null;
+  const defaultSubmitLabel = submitButton?.value || "Send";
   const wrapper =
     (form.closest(".w-form") as HTMLElement | null) || form.parentElement;
 
@@ -41,7 +72,64 @@ export function initContactForm() {
   doneBox.style.display = "none";
   failBox.style.display = "none";
 
-  form.addEventListener("submit", async (e: Event) => {
+  const failInner = failBox.querySelector("div") || failBox;
+  const doneInner = doneBox.querySelector("div") || doneBox;
+
+  const showFailure = (message: string) => {
+    doneBox.style.display = "none";
+    failBox.style.display = "block";
+    failInner.textContent = message;
+  };
+
+  const hideFailure = () => {
+    failBox.style.display = "none";
+    failInner.textContent = "";
+  };
+
+  const setSubmitting = (isSubmitting: boolean) => {
+    if (!submitButton) {
+      return;
+    }
+
+    submitButton.disabled = isSubmitting;
+    submitButton.value = isSubmitting ? "Sending..." : defaultSubmitLabel;
+    submitButton.setAttribute("aria-busy", isSubmitting ? "true" : "false");
+  };
+
+  const ensureRecaptchaWidget = () => {
+    if (!recaptchaSiteKey || contactForm.__dgRecaptchaWidgetId !== undefined) {
+      return;
+    }
+
+    const recaptchaContainer = form.querySelector("#contact-recaptcha") as HTMLElement | null;
+    if (!recaptchaContainer || !window.grecaptcha?.render) {
+      return;
+    }
+
+    const size = window.innerWidth <= 479 ? "compact" : "normal";
+    contactForm.__dgRecaptchaWidgetId = window.grecaptcha.render(recaptchaContainer, {
+      sitekey: recaptchaSiteKey,
+      size,
+      callback: () => {
+        if (failInner.textContent === "Please complete the reCAPTCHA challenge.") {
+          hideFailure();
+        }
+      },
+      "expired-callback": () => {
+        showFailure("reCAPTCHA expired. Please complete it again.");
+      },
+    });
+  };
+
+  if (window.grecaptcha?.ready) {
+    window.grecaptcha.ready(ensureRecaptchaWidget);
+  }
+
+  if (contactForm.__dgContactHandler) {
+    return;
+  }
+
+  contactForm.__dgContactHandler = async (e: Event) => {
     e.preventDefault();
     e.stopPropagation();
     if (typeof e.stopImmediatePropagation === "function") {
@@ -56,8 +144,15 @@ export function initContactForm() {
       ?.value?.trim() || "";
     const message = (form.querySelector('[name="message"]') as HTMLTextAreaElement)
       ?.value?.trim() || "";
+    const termsAccepted = (form.querySelector('[name="terms"]') as HTMLInputElement)
+      ?.checked || false;
 
-    const data = { first_name: first, last_name: last, email, message };
+    const data: Record<string, string> = {
+      first_name: first,
+      last_name: last,
+      email,
+      message,
+    };
 
     const error: string[] = [];
 
@@ -73,11 +168,25 @@ export function initContactForm() {
       }
     }
     if (!message) error.push("Message is required.");
+    if (!termsAccepted) {
+      error.push("Please accept the Terms of Service and Privacy Policy.");
+    }
+
+    if (recaptchaSiteKey) {
+      if (!window.grecaptcha || contactForm.__dgRecaptchaWidgetId === undefined) {
+        error.push("reCAPTCHA is still loading. Please wait a moment and try again.");
+      } else {
+        const recaptchaToken = window.grecaptcha.getResponse(contactForm.__dgRecaptchaWidgetId);
+        if (!recaptchaToken) {
+          error.push("Please complete the reCAPTCHA challenge.");
+        } else {
+          data.recaptchaToken = recaptchaToken;
+        }
+      }
+    }
 
     if (error.length > 0) {
-      doneBox.style.display = "none";
-      failBox.style.display = "block";
-      failBox.textContent = error.join("\n");
+      showFailure(error.join("\n"));
       return;
     }
 
@@ -89,6 +198,8 @@ export function initContactForm() {
     const endpoint =
       form.getAttribute("action") ||
       (apiBase ? `${apiBase.replace(/\/$/, "")}/api/contact` : `${window.location.origin}/api/contact`);
+
+    setSubmitting(true);
 
     try {
       const res = await fetch(endpoint, {
@@ -104,9 +215,7 @@ export function initContactForm() {
 
       if (res.ok) {
         doneBox.style.display = "block";
-        failBox.style.display = "none";
-
-        const doneInner = doneBox.querySelector("div") || doneBox;
+        hideFailure();
         doneInner.textContent = "Thanks! Your message was sent.";
 
         (form as HTMLFormElement).reset();
@@ -115,18 +224,22 @@ export function initContactForm() {
           ? payload.msg.join("\n")
           : payload?.error || `Submission failed (${res.status}).`;
 
-        doneBox.style.display = "none";
-        failBox.style.display = "block";
+        showFailure(errorMsg);
+      }
 
-        const failInner = failBox.querySelector("div") || failBox;
-        failInner.textContent = errorMsg;
+      if (window.grecaptcha && contactForm.__dgRecaptchaWidgetId !== undefined) {
+        window.grecaptcha.reset(contactForm.__dgRecaptchaWidgetId);
       }
     } catch (err) {
       console.error("[contact] Network error:", err);
-      doneBox.style.display = "none";
-      failBox.style.display = "block";
-      failBox.textContent =
-        "Network error submitting form. Please try again.";
+      showFailure("Network error submitting form. Please try again.");
+      if (window.grecaptcha && contactForm.__dgRecaptchaWidgetId !== undefined) {
+        window.grecaptcha.reset(contactForm.__dgRecaptchaWidgetId);
+      }
+    } finally {
+      setSubmitting(false);
     }
-  }, { capture: true });
+  };
+
+  form.addEventListener("submit", contactForm.__dgContactHandler, { capture: true });
 }

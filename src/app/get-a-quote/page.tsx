@@ -1,15 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useEffect } from "react";
 import "./quote.css";
 
 export default function GetAQuotePage() {
-    useEffect(() => {
-        import("./quote");
-      }, []);
+  const recaptchaSiteKey =
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "";
+
+  useEffect(() => {
+    import("./quote");
+  }, []);
   return (
     <>
+      {recaptchaSiteKey ? (
+        <Script
+          src="https://www.google.com/recaptcha/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={() => {
+            window.dispatchEvent(new Event("dg:quote-recaptcha-ready"));
+          }}
+        />
+      ) : null}
       <div className="navbar-logo-left-6">
         <div
           data-animation="default"
@@ -89,6 +102,7 @@ export default function GetAQuotePage() {
               action="/api/quote"
               encType="multipart/form-data"
               className="form-style-5"
+              data-recaptcha-site-key={recaptchaSiteKey}
               noValidate
             >
               <div className="input-5">
@@ -262,7 +276,7 @@ export default function GetAQuotePage() {
                 ></textarea>
               </div>
 
-              <div className="selectedfalse-alternatefalse">
+              <div className="selectedfalse-alternatefalse quote-terms-row">
                 <label className="w-checkbox checkbox-field">
                   <div className="w-checkbox-input w-checkbox-input--inputType-custom checkbox-2"></div>
                   <input
@@ -278,10 +292,16 @@ export default function GetAQuotePage() {
                 </label>
               </div>
 
+              {recaptchaSiteKey ? (
+                <div className="quote-recaptcha">
+                  <div id="quote-recaptcha" className="quote-recaptcha-widget"></div>
+                </div>
+              ) : null}
+
               <input
                 id="submit-quote"
                 type="submit"
-                data-wait="Please wait..."
+                data-wait="Sending..."
                 className="form-button-2 w-button"
                 value="Send"
               />

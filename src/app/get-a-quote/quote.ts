@@ -18,7 +18,32 @@ interface QuoteApiResponse {
   file?: { url?: string };
 }
 
-const form = document.getElementById("quote-form") as HTMLFormElement | null;
+type QuoteFormElement = HTMLFormElement & {
+  __dgQuoteRecaptchaWidgetId?: number;
+};
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      render: (
+        container: string | HTMLElement,
+        parameters: {
+          sitekey: string;
+          size?: "normal" | "compact";
+          callback?: () => void;
+          "expired-callback"?: () => void;
+        }
+      ) => number;
+      getResponse: (widgetId?: number) => string;
+      reset: (widgetId?: number) => void;
+      ready: (callback: () => void) => void;
+    };
+  }
+}
+
+const form = document.getElementById("quote-form") as QuoteFormElement | null;
+const recaptchaSiteKey = form?.dataset.recaptchaSiteKey?.trim() || "";
+const recaptchaContainer = document.getElementById("quote-recaptcha") as HTMLElement | null;
 const dropzone = document.getElementById("upload-dropzone") as HTMLElement | null;
 const photosInput = document.getElementById("photos") as HTMLInputElement | null;
 const list = document.getElementById("upload-list") as HTMLElement | null;
@@ -93,6 +118,30 @@ const ACCEPTED_TYPES: string[] = [
 ];
 
 const selectedFiles: UploadItem[] = [];
+
+function ensureQuoteRecaptchaWidget(): void {
+  if (!form || !recaptchaSiteKey || form.__dgQuoteRecaptchaWidgetId !== undefined) {
+    return;
+  }
+
+  if (!recaptchaContainer || !window.grecaptcha?.render) {
+    return;
+  }
+
+  const size = window.innerWidth <= 479 ? "compact" : "normal";
+  form.__dgQuoteRecaptchaWidgetId = window.grecaptcha.render(recaptchaContainer, {
+    sitekey: recaptchaSiteKey,
+    size,
+  });
+}
+
+if (recaptchaSiteKey) {
+  if (window.grecaptcha?.ready) {
+    window.grecaptcha.ready(ensureQuoteRecaptchaWidget);
+  } else {
+    window.addEventListener("dg:quote-recaptcha-ready", ensureQuoteRecaptchaWidget, { once: true });
+  }
+}
 
 function safeUUID(): string {
   try {
@@ -527,6 +576,18 @@ if (form) {
     if (el) el.style.display = "none";
   }
 
+  function showFailure(message: string): void {
+    const errorBox = document.querySelector(
+      ".w-form-fail div"
+    ) as HTMLElement | null;
+    const failWrapper = document.querySelector(
+      ".w-form-fail"
+    ) as HTMLElement | null;
+
+    if (errorBox) errorBox.innerHTML = message;
+    if (failWrapper) failWrapper.style.display = "block";
+  }
+
   form.addEventListener("submit", async (e: SubmitEvent) => {
     e.preventDefault();
     hide(donePane);
@@ -547,6 +608,25 @@ if (form) {
         submitBtn.disabled = false;
         submitBtn.value = originalText;
         return;
+      }
+
+      if (recaptchaSiteKey) {
+        if (!window.grecaptcha || form.__dgQuoteRecaptchaWidgetId === undefined) {
+          showFailure("reCAPTCHA is still loading. Please wait a moment and try again.");
+          submitBtn.disabled = false;
+          submitBtn.value = originalText;
+          return;
+        }
+
+        const recaptchaToken = window.grecaptcha.getResponse(form.__dgQuoteRecaptchaWidgetId);
+        if (!recaptchaToken) {
+          showFailure("Please complete the reCAPTCHA challenge.");
+          submitBtn.disabled = false;
+          submitBtn.value = originalText;
+          return;
+        }
+
+        fd.append("recaptchaToken", recaptchaToken);
       }
 
       fd.delete("photos");
@@ -605,6 +685,9 @@ if (form) {
       }
       if (failWrapper) failWrapper.style.display = "block";
     } finally {
+      if (window.grecaptcha && form.__dgQuoteRecaptchaWidgetId !== undefined) {
+        window.grecaptcha.reset(form.__dgQuoteRecaptchaWidgetId);
+      }
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.value = originalText;

@@ -70,6 +70,76 @@ function ticketIdFromBatch(batch) {
   return parts[parts.length - 1] || null;
 }
 
+function getRequestIp(req) {
+  const forwardedFor = req.headers.get("x-forwarded-for") || "";
+  return forwardedFor.split(",")[0]?.trim() || "";
+}
+
+async function verifyRecaptchaToken(token, req) {
+  const siteKey = (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "").trim();
+  const secret = (process.env.RECAPTCHA_SECRET_KEY || "").trim();
+  const recaptchaEnabled = Boolean(siteKey || secret);
+
+  if (!recaptchaEnabled) {
+    return { ok: true, skipped: true };
+  }
+
+  if (!siteKey || !secret) {
+    console.error("[quote] recaptcha misconfigured", {
+      hasSiteKey: Boolean(siteKey),
+      hasSecret: Boolean(secret),
+    });
+    return {
+      ok: false,
+      status: 503,
+      error: "reCAPTCHA is temporarily unavailable. Please try again later.",
+    };
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Please complete the reCAPTCHA challenge.",
+    };
+  }
+
+  const body = new URLSearchParams({
+    secret,
+    response: token,
+  });
+
+  const remoteIp = getRequestIp(req);
+  if (remoteIp) {
+    body.set("remoteip", remoteIp);
+  }
+
+  const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`reCAPTCHA verification failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (!payload?.success) {
+    console.warn("[quote] recaptcha rejected:", payload?.["error-codes"] || []);
+    return {
+      ok: false,
+      status: 400,
+      error: "reCAPTCHA verification failed. Please try again.",
+    };
+  }
+
+  return { ok: true, skipped: false };
+}
+
 export async function POST(req) {
   try {
     const origin = req.headers.get("origin") || "";
@@ -77,6 +147,7 @@ export async function POST(req) {
       ? origin
       : "https://detailgeeksautospa.com";
     const form = await req.formData();
+    const recaptchaToken = form.get("recaptchaToken");
 
     // --- Basic server-side validation mirroring form "required" fields ---
     const missing = [];
@@ -99,6 +170,17 @@ export async function POST(req) {
       return NextResponse.json(
         { ok: false, error: 'Missing required fields', missing },
         { status: 400, headers: corsHeaders(allow) }
+      );
+    }
+
+    const recaptchaCheck = await verifyRecaptchaToken(
+      typeof recaptchaToken === "string" ? recaptchaToken.trim() : "",
+      req
+    );
+    if (!recaptchaCheck.ok) {
+      return NextResponse.json(
+        { ok: false, error: recaptchaCheck.error },
+        { status: recaptchaCheck.status, headers: corsHeaders(allow) }
       );
     }
 
@@ -141,7 +223,8 @@ export async function POST(req) {
       upload_batch,                 // store the S3 batch "folder" id
       ticket_id,
       createdAt: new Date(),
-      ip: req.headers.get("x-forwarded-for") || "unknown",
+      ...(recaptchaCheck.skipped ? {} : { recaptchaVerifiedAt: new Date() }),
+      ip: getRequestIp(req) || "unknown",
       ua: req.headers.get("user-agent") || "unknown",
     };
 

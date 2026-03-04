@@ -81,12 +81,6 @@ export default function BookingPage() {
           }
         }}
       />
-      <Script id="dg-vars">{`
-        window.DG_SERVICE_CENTER_LAT = 28.209820080280995;
-        window.DG_SERVICE_CENTER_LNG = -82.35380942519879;
-        window.DG_GMAPS_API_KEY = "AIzaSyAzyJG-JChx9PvBU4u9cMTmssx7CwIjz0g";
-      `}</Script>
-      
         <div className="navbar-logo-left-6">
           <div
             data-animation="default"
@@ -1035,9 +1029,9 @@ export default function BookingPage() {
             <div className="flex-block-349 service-area-alert" role="alert" aria-live="polite">
               <img src="/images/caution.svg" alt="" className="service-area-icon" />
               <div className="service-area-copy">
-                <div className="service-area-title">Address Outside Service Area</div>
-                <div className="service-area-message">
-                  Sorry, this address is outside our current service area. We currently serve areas within 25 miles of downtown Wesley Chapel.
+                <div className="service-area-title" id="service-area-title">Address Outside Service Area</div>
+                <div className="service-area-message" id="service-area-message">
+                  Sorry, this address is outside our current service area.
                   Please contact us if you&apos;d like to discuss special arrangements.
                 </div>
               </div>

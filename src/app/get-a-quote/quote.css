@@ -244,6 +244,55 @@
   padding-bottom: 48px;
 }
 
+.quote-terms-row {
+  width: 100%;
+  max-width: 768px;
+  margin-right: 0 !important;
+  align-self: stretch;
+}
+
+.quote-terms-row .checkbox-field {
+  align-items: flex-start;
+  width: 100%;
+}
+
+.quote-terms-row .checkbox-label {
+  width: auto;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.quote-recaptcha {
+  width: 100%;
+  max-width: 768px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  align-self: stretch;
+}
+
+.quote-recaptcha-widget {
+  width: 100%;
+}
+
+.contact-form-4 .form-button-2 {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.contact-form-4 .form-button-2:hover {
+  background-color: #32343a;
+}
+
+.contact-form-4 .form-button-2:active {
+  background-color: #43464d;
+}
+
+.contact-form-4 .form-button-2:disabled {
+  background-color: #32343a;
+  cursor: wait;
+  opacity: 1;
+}
+
 /* Minimal hover: darken only the radio circle (keeps original Webflow layout) */
 .radio-button-field.w-radio:hover .w-form-formradioinput--inputType-custom.radio-button.w-radio-input {
   background-color: #16273a !important; /* darker shade of #1d3753 */

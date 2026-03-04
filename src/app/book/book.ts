@@ -60,6 +60,7 @@ export interface BookingPaymentSummary {
 }
 
 export const PAYMENT_SUMMARY_EVENT = "dg:payment-summary";
+type ServiceAreaStatus = "inside" | "outside" | "incomplete" | "unverified";
   
   export const $ = <T extends HTMLElement = HTMLElement>(
     sel: string,
@@ -1317,80 +1318,65 @@ export function broadcastPaymentSummary(): BookingPaymentSummary | null {
   );
   return detail;
 }
-    
-  export async function geocodeAddress(): Promise<{ lat: number; lng: number } | null> {
-    const street = $<HTMLInputElement>("#street-address")?.value ?? "";
-    const city = $<HTMLInputElement>("#city")?.value ?? "";
-    const state = $<HTMLInputElement>("#state")?.value ?? "";
-    const zip = $<HTMLInputElement>("#zip-code")?.value ?? "";
-  
-    const fullAddress = `${street}, ${city}, ${state} ${zip}`;
-  
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      fullAddress
-    )}&key=${window.DG_GMAPS_API_KEY}`;
-  
-    try {
-      const res = await fetch(url);
-      if (!res.ok) return null;
-  
-      const data = await res.json();
-      if (!data.results?.length) return null;
-  
-      const loc = data.results[0].geometry.location;
-      return { lat: loc.lat, lng: loc.lng };
-    } catch {
-      return null;
-    }
+
+function setServiceAreaAlertContent(status: ServiceAreaStatus) {
+  const title = $<HTMLElement>("#service-area-title");
+  const message = $<HTMLElement>("#service-area-message");
+  if (!title || !message) return;
+
+  if (status === "outside") {
+    title.textContent = "Address Outside Service Area";
+    message.textContent =
+      "Sorry, this address is outside our current service area. Please contact us if you'd like to discuss special arrangements.";
+    return;
   }
-    
-  export function haversineDistanceMiles(
-    lat1: number,
-    lng1: number,
-    lat2: number,
-    lng2: number
-  ): number {
-    const R = 3958.8;
-  
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) ** 2;
-  
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
-    return R * c;
+
+  title.textContent = "Unable To Verify Address";
+  message.textContent =
+    "We couldn't confirm whether this address is inside our service area. Double-check the address details, then contact us if you'd like us to confirm coverage before booking.";
+}
+
+
+export async function checkServiceArea(): Promise<ServiceAreaStatus> {
+  const street = $<HTMLInputElement>("#street-address")?.value?.trim() ?? "";
+  const city = $<HTMLInputElement>("#city")?.value?.trim() ?? "";
+  const state = $<HTMLInputElement>("#state")?.value?.trim() ?? "";
+  const zip = $<HTMLInputElement>("#zip-code")?.value?.trim() ?? "";
+
+  if (!street || !city || !state || !zip) return "incomplete";
+
+  try {
+    const res = await fetch("/api/service-area", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ street, city, state, zip }),
+      cache: "no-store",
+    });
+    if (!res.ok) return "unverified";
+
+    const data = (await res.json()) as { status?: ServiceAreaStatus };
+    return data.status === "inside" || data.status === "outside"
+      ? data.status
+      : "unverified";
+  } catch {
+    return "unverified";
   }
-  
-  
-  export async function checkServiceArea(): Promise<boolean> {
-    const result = await geocodeAddress();
-    if (!result) return false;
-  
-    const miles = haversineDistanceMiles(
-      window.DG_SERVICE_CENTER_LAT,
-      window.DG_SERVICE_CENTER_LNG,
-      result.lat,
-      result.lng
-    );
-  
-    return miles <= 25;
-  }
+}
     
-  export async function updateServiceAreaWarning() {
+  export async function updateServiceAreaWarning(): Promise<ServiceAreaStatus> {
     const block = $<HTMLElement>(".flex-block-349"); // the yellow warning container
-    if (!block) return;
+    if (!block) return "unverified";
   
     block.style.display = "none";
   
-    const ok = await checkServiceArea();
-    if (!ok) {
+    const status = await checkServiceArea();
+    if (status === "outside" || status === "unverified") {
+      setServiceAreaAlertContent(status);
       block.style.display = "flex";
     }
+    return status;
   }
   
   export async function validateContactInfo(): Promise<boolean> {
@@ -1406,10 +1392,8 @@ export function broadcastPaymentSummary(): BookingPaymentSummary | null {
   
     if (!valid) return false;
   
-    await updateServiceAreaWarning();
-  
-    const insideArea = await checkServiceArea();
-    if (!insideArea) {
+    const serviceAreaStatus = await updateServiceAreaWarning();
+    if (serviceAreaStatus === "outside") {
       return false;
     }
   
@@ -1455,14 +1439,6 @@ export function broadcastPaymentSummary(): BookingPaymentSummary | null {
       clearTimeout(timer);
       timer = setTimeout(() => fn(...args), delay);
     };
-  }
-
-declare global {
-    interface Window {
-      DG_SERVICE_CENTER_LAT: number;
-      DG_SERVICE_CENTER_LNG: number;
-      DG_GMAPS_API_KEY: string;
-    }
   }
 
 function formatDateTimeForSummary(): string {

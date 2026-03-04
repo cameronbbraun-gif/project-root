@@ -78,6 +78,76 @@ function esc(s = "") {
   })[c]);
 }
 
+function getRequestIp(req) {
+  const forwardedFor = req.headers.get("x-forwarded-for") || "";
+  return forwardedFor.split(",")[0]?.trim() || "";
+}
+
+async function verifyRecaptchaToken(token, req) {
+  const siteKey = (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "").trim();
+  const secret = (process.env.RECAPTCHA_SECRET_KEY || "").trim();
+  const recaptchaEnabled = Boolean(siteKey || secret);
+
+  if (!recaptchaEnabled) {
+    return { ok: true, skipped: true };
+  }
+
+  if (!siteKey || !secret) {
+    console.error("[contact] recaptcha misconfigured", {
+      hasSiteKey: Boolean(siteKey),
+      hasSecret: Boolean(secret),
+    });
+    return {
+      ok: false,
+      status: 503,
+      message: "reCAPTCHA is temporarily unavailable. Please try again later.",
+    };
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Please complete the reCAPTCHA challenge.",
+    };
+  }
+
+  const body = new URLSearchParams({
+    secret,
+    response: token,
+  });
+
+  const remoteIp = getRequestIp(req);
+  if (remoteIp) {
+    body.set("remoteip", remoteIp);
+  }
+
+  const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`reCAPTCHA verification failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (!payload?.success) {
+    console.warn("[contact] recaptcha rejected:", payload?.["error-codes"] || []);
+    return {
+      ok: false,
+      status: 400,
+      message: "reCAPTCHA verification failed. Please try again.",
+    };
+  }
+
+  return { ok: true, skipped: false };
+}
+
 async function sendResendEmail({ to, subject, html, replyTo }) {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
   const from = (process.env.RESEND_FROM_EMAIL || process.env.FROM_EMAIL || "").trim();
@@ -141,6 +211,7 @@ export async function POST(req) {
   const last_name = readField(body, "last_name");
   const email = readField(body, "email");
   const message = readField(body, "message");
+  const recaptchaToken = readField(body, "recaptchaToken");
 
   console.log("first_name:", first_name);
   console.log("last_name:", last_name);
@@ -172,6 +243,14 @@ export async function POST(req) {
   }
 
   try {
+    const recaptchaCheck = await verifyRecaptchaToken(recaptchaToken, req);
+    if (!recaptchaCheck.ok) {
+      return NextResponse.json(
+        { msg: [recaptchaCheck.message] },
+        { status: recaptchaCheck.status, headers }
+      );
+    }
+
     const db = await getContactDb();
     if (db) {
       const now = new Date();
@@ -183,7 +262,8 @@ export async function POST(req) {
           message,
           createdAt: now,
           updatedAt: now,
-          ip: req.headers.get("x-forwarded-for") || "unknown",
+          ...(recaptchaCheck.skipped ? {} : { recaptchaVerifiedAt: now }),
+          ip: getRequestIp(req) || "unknown",
           ua: req.headers.get("user-agent") || "unknown",
         });
       } catch (dbErr) {
